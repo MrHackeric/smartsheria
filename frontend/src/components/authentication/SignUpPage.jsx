@@ -4,17 +4,20 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
+  const navigate = useNavigate();
+
+  // State variables
   const [fullName, setFullName] = useState('');
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [agreedToPrivacyPolicy, setAgreedToPrivacyPolicy] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Handle sign-up logic
   const handleSignUp = async () => {
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -29,22 +32,15 @@ const SignUpPage = () => {
     try {
       setIsLoading(true);
       setError('');
-      const userData = {
-        fullName,
-        userName,
-        email,
-        phoneNumber: phone,
-        role: 'user',
-        password,
-      };
+      const userData = { fullName, userName, email, phoneNumber, password };
 
       const response = await axios.post('http://localhost:3000/api/user/register', userData);
-      console.log('User created successfully:', response.data);
 
+      console.log('User created successfully:', response.data);
       navigate('/community');
     } catch (error) {
       console.error('Error creating user:', error);
-      setError('An error occurred while signing up. Please try again.');
+      setError(error.response?.data?.message || 'An error occurred while signing up.');
     } finally {
       setIsLoading(false);
     }
@@ -93,14 +89,14 @@ const SignUpPage = () => {
 
         {/* Phone Number Input */}
         <div className="relative mb-4">
-          <label htmlFor="phone" className="block text-gray-700 font-medium mb-2">Phone Number</label>
+          <label htmlFor="phoneNumber" className="block text-gray-700 font-medium mb-2">Phone Number</label>
           <div className="flex items-center border border-gray-300 rounded-lg p-2">
             <FaPhone className="text-gray-400 mr-2" />
             <input
               type="tel"
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              id="phoneNumber"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               className="w-full focus:outline-none focus:border-blue-400"
               placeholder="Enter your phone number"
             />
@@ -187,16 +183,6 @@ const SignUpPage = () => {
             'Sign Up'
           )}
         </button>
-
-        {/* Already have an account Link */}
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/login" className="text-blue-500 hover:underline">
-              Login
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );
