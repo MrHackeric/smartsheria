@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaUser, FaEnvelope, FaLock, FaPhone, FaSpinner } from 'react-icons/fa';
-import axios from 'axios';
+import sxiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
@@ -34,7 +34,7 @@ const SignUpPage = () => {
       setError('');
       const userData = { fullName, userName, email, phoneNumber, password };
 
-      const response = await axios.post('http://localhost:3000/api/user/register', userData);
+      const response = await axiosInstance.post('http://localhost:3000/api/user/register', userData);
 
       console.log('User created successfully:', response.data);
       navigate('/community');

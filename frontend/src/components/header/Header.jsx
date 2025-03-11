@@ -4,7 +4,7 @@ import { AiOutlineTeam, AiOutlineMessage, AiOutlineBell, AiOutlineSetting, AiOut
 import MenuIcon from '@mui/icons-material/Menu'; // Hamburger menu for mobile
 import CloseIcon from '@mui/icons-material/Close'; // Close icon for mobile menu
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstance';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 
@@ -14,21 +14,21 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      // Make API call to logout the user
-      const response = await axios.post("http://localhost:3000/api/users/logout");
+      const response = await axiosInstance.post("http://localhost:3000/api/user/logout", {}, { withCredentials: true });
   
       if (response.status === 200) {
-        // Successfully logged out, clear client-side state
-        console.log('Logged out successfully');
+        console.log("Logged out successfully");
   
-        // Redirect the user to the login or home page
+        // Clear session storage to remove user session
+        sessionStorage.clear();
+  
+        // Redirect user to login page
         navigate("/login");
       }
     } catch (error) {
       console.error("Logout failed", error);
     }
   };
-  
 
   return (
     <header className="bg-gradient-to-r from-purple-900 to-blue-900 text-white shadow-md py-4 fixed w-full z-50">
@@ -73,10 +73,13 @@ const Header = () => {
             <span className="text-sm mt-1">Report</span>
           </Link>
 
-          <Link to="#" className="flex flex-col items-center text-white hover:text-red-300 transition duration-300 ease-in-out" onClick={handleLogout}>
-            <ExitToAppIcon size={"20"} />
+          <button 
+            onClick={handleLogout} 
+            className="flex flex-col items-center text-white hover:text-red-300 transition duration-300 ease-in-out"
+          >
+            <ExitToAppIcon size={20} />
             <span className="text-sm mt-1">Logout</span>
-          </Link>
+          </button>
 
         </nav>
       </div>

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Button, TextField, Avatar, Divider, IconButton, Collapse, Tooltip } from "@mui/material";
+import { Button, TextField, Divider, Collapse } from "@mui/material";
 import { Formik, Field, Form } from "formik";
 import * as Yup from "yup";
-import { db, doc, getDoc, updateDoc } from "../../utils/firebase-config";
+import axios from "axios";
 import { useAuth } from "../../utils/AuthContext";
-import { CopyAll } from "@mui/icons-material";
 
 const EditProfile = () => {
   const { currentUser } = useAuth();
@@ -14,15 +13,17 @@ const EditProfile = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      if (userDoc.exists()) {
-        setUserData(userDoc.data());
+      try {
+        const response = await axios.get(`/api/users/${currentUser._id}`, { withCredentials: true });
+        setUserData(response.data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
         setLoading(false);
-      } else {
-        console.error("User document does not exist.");
       }
     };
-    fetchUserData();
+    
+    if (currentUser) fetchUserData();
   }, [currentUser]);
 
   const validationSchema = Yup.object({
@@ -37,7 +38,7 @@ const EditProfile = () => {
 
   const handleSubmit = async (values) => {
     try {
-      await updateDoc(doc(db, "users", currentUser.uid), values);
+      await axios.put(`/api/users/${currentUser._id}`, values, { withCredentials: true });
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile: ", error);
@@ -47,112 +48,91 @@ const EditProfile = () => {
 
   const toggleAdvancedSettings = () => setAdvancedSettingsOpen((prev) => !prev);
 
-  const copyProfileLink = () => {
-    const profileLink = `https://example.com/profile/${userData.username}`;
-    navigator.clipboard.writeText(profileLink);
-    alert("Profile link copied to clipboard!");
-  };
+  if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="max-w-lg max-h-30 mx-auto bg-white shadow-lg rounded-xl p-6 mt-20">
-      <div>
-
-        <Formik
-          enableReinitialize
-          initialValues={{
-            firstName: userData.firstName || "",
-            lastName: userData.lastName || "",
-            username: userData.username || "",
-            email: userData.email || "",
-            bio: userData.bio || "",
-            phone: userData.phone || "",
-          }}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ errors, touched }) => (
-            <Form className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field
-                  name="fullName"
-                  as={TextField}
-                  label="Full Names"
-                  variant="outlined"
-                  fullWidth
-                  error={touched.firstName && !!errors.firstName}
-                  helperText={touched.firstName ? errors.firstName : ""}
-                />
+    <div className="max-w-lg mx-auto bg-white shadow-lg rounded-xl p-6 mt-20">
+      <Formik
+        enableReinitialize
+        initialValues={{
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+          username: userData.username || "",
+          email: userData.email || "",
+          phone: userData.phone || "",
+        }}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ errors, touched }) => (
+          <Form className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field
-                name="username"
+                name="firstName"
                 as={TextField}
-                label="Username"
+                label="First Name"
                 variant="outlined"
                 fullWidth
-                error={touched.username && !!errors.username}
-                helperText={touched.username ? errors.username : ""}
-              />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field
-                name="email"
-                as={TextField}
-                label="Email"
-                variant="outlined"
-                fullWidth
-                error={touched.email && !!errors.email}
-                helperText={touched.email ? errors.email : ""}
+                error={touched.firstName && !!errors.firstName}
+                helperText={touched.firstName ? errors.firstName : ""}
               />
               <Field
-                name="phone"
+                name="lastName"
                 as={TextField}
-                label="Phone Number"
+                label="Last Name"
                 variant="outlined"
                 fullWidth
-                error={touched.phone && !!errors.phone}
-                helperText={touched.phone ? errors.phone : ""}
+                error={touched.lastName && !!errors.lastName}
+                helperText={touched.lastName ? errors.lastName : ""}
               />
-              </div>
-              <Divider className="my-4" />
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={toggleAdvancedSettings}
-                className="text-sm"
-              >
-                Advanced Settings
-              </Button>
-              <Collapse in={advancedSettingsOpen}>
+            </div>
+            <Field
+              name="username"
+              as={TextField}
+              label="Username"
+              variant="outlined"
+              fullWidth
+              error={touched.username && !!errors.username}
+              helperText={touched.username ? errors.username : ""}
+            />
+            <Field
+              name="email"
+              as={TextField}
+              label="Email"
+              variant="outlined"
+              fullWidth
+              error={touched.email && !!errors.email}
+              helperText={touched.email ? errors.email : ""}
+            />
+            <Field
+              name="phone"
+              as={TextField}
+              label="Phone Number"
+              variant="outlined"
+              fullWidth
+              error={touched.phone && !!errors.phone}
+              helperText={touched.phone ? errors.phone : ""}
+            />
+            <Divider className="my-4" />
+            <Button fullWidth variant="outlined" onClick={toggleAdvancedSettings}>
+              Advanced Settings
+            </Button>
+            <Collapse in={advancedSettingsOpen}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  fullWidth
-                  className="mt-2"
-                >
+                <Button variant="outlined" color="warning" fullWidth className="mt-2">
                   Deactivate Account
                 </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  fullWidth
-                  className="mt-2"
-                >
+                <Button variant="outlined" color="error" fullWidth className="mt-2">
                   Delete Account
                 </Button>
               </div>
-              </Collapse>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-              >
-                Save Changes
-              </Button>
-            </Form>
-          )}
-        </Formik>
-      </div>
+            </Collapse>
+            <Button type="submit" variant="contained" color="primary" fullWidth>
+              Save Changes
+            </Button>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 };

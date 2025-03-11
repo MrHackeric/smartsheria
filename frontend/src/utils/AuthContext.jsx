@@ -1,13 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "./firebase-config"; // Import your Firebase config
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
+import axios from "axios";
 
-// Create a context for authentication
 const AuthContext = createContext();
 
 // AuthProvider component to wrap around the app
@@ -15,21 +8,30 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Monitor user state changes
+  // Fetch authenticated user
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get("/auth/user", { withCredentials: true });
+        setCurrentUser(response.data.user);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   // Login function
   const login = async (email, password) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const response = await axios.post("/auth/login", { email, password }, { withCredentials: true });
+      setCurrentUser(response.data.user);
     } catch (error) {
-      console.error("Error logging in:", error.message);
+      console.error("Error logging in:", error.response?.data?.message || error.message);
       throw error;
     }
   };
@@ -37,9 +39,10 @@ export const AuthProvider = ({ children }) => {
   // Signup function
   const signup = async (email, password) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const response = await axios.post("/auth/register", { email, password }, { withCredentials: true });
+      setCurrentUser(response.data.user);
     } catch (error) {
-      console.error("Error signing up:", error.message);
+      console.error("Error signing up:", error.response?.data?.message || error.message);
       throw error;
     }
   };
@@ -47,9 +50,10 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
-      await signOut(auth);
+      await axios.post("/auth/logout", {}, { withCredentials: true });
+      setCurrentUser(null);
     } catch (error) {
-      console.error("Error logging out:", error.message);
+      console.error("Error logging out:", error.response?.data?.message || error.message);
       throw error;
     }
   };

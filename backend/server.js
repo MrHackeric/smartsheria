@@ -1,30 +1,70 @@
-// server.js (Main Entry Point)
 import express from 'express';
 import mongoose from 'mongoose';
+import connectDB from './config/database.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import connectDB from './config/database.js';
+import http from 'http';
+
+import { Server } from 'socket.io';
+import { socketHandler } from './services/socketServices.js';
 import authRoutes from './routes/auth.js';
-import chatbotRoutes from './routes/chatbot.js';
+import protectedRoutes from './routes/protected.js';
+import messageRoutes from './routes/messageRoutes.js';
+import communityMessageRoutes from './routes/communityMessageRoutes.js';
+
+import initializeSocket from './socket.js';
+import bugReportRoutes from "./routes/bugReportRoutes.js";
 
 dotenv.config();
 connectDB();
 
-const app = express();
+const app = express(); // ✅ Define `app` first
+const server = http.createServer(app); // ✅ Now create `server`
 
-//Middleware
+// Initialize Socket.IO
+const io = initializeSocket(server);
+
+// Middleware
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: 'http://localhost:5173', // Adjust based on frontend port
+    methods: ['GET', 'POST'],
+    credentials: true, // Allow cookies & auth headers
+  })
+);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
+  .catch((err) => console.log(err));
 
-//Use auth routes
+// Handle WebSocket connections
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('newMessage', (message) => {
+    console.log('New message:', message);
+    io.emit('messageReceived', message); // Broadcast to all clients
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+// Use Routes
 app.use('/api/user', authRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/protected', protectedRoutes);
+app.use('/api/communityMessages', communityMessageRoutes);
+app.use('/api/bugReports', bugReportRoutes);
 
+//Socket.io Setup
+socketHandler(io);
+
+// Start Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`)); // ✅ Use `server.listen` instead of `app.listen`

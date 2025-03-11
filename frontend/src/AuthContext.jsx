@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import { auth } from "./src/projectmodules/Auth/firebase-config"; // Adjust the import based on your setup
-import { onAuthStateChanged } from "firebase/auth";
+import axios from "axios";
 
 export const AuthContext = createContext();
 
@@ -8,10 +7,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get("/auth/user", { withCredentials: true });
+        setUser(response.data.user);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setUser(null);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   return (
@@ -19,4 +25,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthProvider
+export default AuthProvider;

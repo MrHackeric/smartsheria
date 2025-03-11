@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaLock, FaEnvelope, FaSpinner } from 'react-icons/fa';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import bcrypt from 'bcryptjs'; // Use bcryptjs for the browser
 
@@ -36,7 +36,7 @@ const LoginPage = () => {
       }
 
       // Proceed with sending login data to the server
-      const response = await axios.post('http://localhost:3000/api/user/login', { email, password },
+      const response = await axiosInstance.post('http://localhost:3000/api/user/login', { email, password },
       { headers: { 'Content-Type': 'application/json' } });
       console.log('Sending Payload:', { email, password });
 

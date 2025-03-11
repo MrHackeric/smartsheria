@@ -1,61 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { socket } from './socket';
-import { fetchMessages, sendMessage } from '../../services/messageService';
-import { requestAiResponse } from '../../services/aiService';
-import { FaCopy, FaPaperPlane, FaDownload, FaShareAlt, FaReply, FaRobot } from 'react-icons/fa';
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { handleCopyMessage, handleDownloadMessage, handleShareMessage } from '../../utils/messageUtils';
-import { db } from '../../utils/firebase-config';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import io from 'socket.io-client';
+import { FaPaperPlane, FaStar, FaCopy, FaDownload, FaShareAlt } from 'react-icons/fa';
+import {
+  handleStarMessage,
+  handleCopyMessage,
+  handleDownloadMessage,
+  handleShareMessage,
+  formatText,
+} from '../../utils/messageUtils'; // Ensure this file contains the utility functions
+
+const socket = io('http://localhost:5000'); // Adjust for your backend
 
 function Community() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [replyTo, setReplyTo] = useState(null);
+  const [userId, setUserId] = useState(localStorage.getItem('userId') || Date.now());
+  const [starredMessages, setStarredMessages] = useState([]);
   const messagesEndRef = useRef(null);
-  const auth = getAuth();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-        fetchMessages(setMessages);
-      }
+    localStorage.setItem('userId', userId);
+    fetchMessages();
+    socket.on('message', (message) => {
+      setMessages((prev) => [...prev, message]);
     });
-    return () => unsubscribeAuth();
+
+    return () => {
+      socket.off('message');
+    };
   }, []);
 
-  const handleSendMessage = async () => {
-    if (input.trim() && currentUser) {
-      try {
-        // Construct the message object
-        const message = {
-          sender: {
-            uid: currentUser.uid,
-            displayName: currentUser.displayName,
-            email: currentUser.email,
-          },
-          text: input.trim(),
-          timestamp: serverTimestamp(),
-          likes: 0,
-          replyTo: replyTo ? replyTo.text : null,
-        };
-
-        // Save message to Firestore
-        await addDoc(collection(db, "messages"), message);
-
-        // Emit the message via socket.io
-        socket.emit("newMessage", message);
-
-        // Update local state
-        setMessages((prevMessages) => [...prevMessages, message]);
-        setInput('');
-        setReplyTo(null);
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/communityMessages');
+      const data = await response.json();
+      setMessages(data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
     }
+  };
+
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+    const messageData = {
+      text: input,
+      senderId: userId,
+      timestamp: new Date().toISOString(),
+    };
+
+    socket.emit('message', messageData);
+    setInput('');
   };
 
   useEffect(() => {
@@ -63,58 +57,46 @@ function Community() {
   }, [messages]);
 
   return (
-    <div className="col-span-full xl:col-span-6 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-300 shadow-lg rounded-2xl flex flex-col h-[90vh]">
-      <div className="p-4 flex flex-col flex-1 overflow-y-auto relative">
-        <h2 className="font-semibold text-blue-700 text-center mb-4 text-2xl">
-          Join the Conversation! 🌍
-        </h2>
-
-        {messages.map((msg, index) => (
-          <div key={index} className={`my-3 flex ${msg.sender.uid === currentUser?.uid ? 'justify-end' : 'justify-start'}`}>
-            <div className="relative max-w-lg w-full">
-              <div className={`p-4 rounded-xl shadow-md ${msg.sender.uid === currentUser?.uid ? 'bg-white text-black' : 'bg-blue-500 text-white'}`}>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold">{msg.sender.displayName || 'User'}</span>
-                  <span className="text-gray-400">{msg.timestamp?.toDate().toLocaleTimeString()}</span>
-                </div>
-                <p className="mt-2 break-words">{msg.text}</p>
-                <div className="flex justify-between mt-3 text-xs text-gray-800">
-                  <button onClick={() => handleCopyMessage(msg.text)} className="flex items-center text-blue-600 hover:text-blue-700">
-                    <FaCopy />
+    <div className="h-screen w-full flex flex-col bg-gray-900 text-white">
+      <div className="p-4 bg-blue-700 text-center text-2xl font-bold shadow-md">Community Chat</div>
+      
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((msg, index) => {
+          const isUser = msg.senderId === userId;
+          const isStarred = starredMessages.some((m) => m.timestamp === msg.timestamp);
+          return (
+            <div key={index} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-lg p-4 rounded-lg shadow-md relative ${isUser ? 'bg-blue-600' : 'bg-gray-800'}`}>
+                <p dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
+                <small className="block text-xs mt-1 text-gray-400">
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </small>
+                
+                {/* Action Buttons */}
+                <div className="flex space-x-2 mt-2 text-gray-300 text-sm">
+                  <button onClick={() => handleStarMessage(msg, starredMessages, setStarredMessages)}>
+                    <FaStar className={`${isStarred ? 'text-yellow-400' : 'text-gray-400'}`} />
                   </button>
-                  <button onClick={() => handleDownloadMessage(msg.text)} className="flex items-center text-blue-600 hover:text-blue-700">
-                    <FaDownload />
-                  </button>
-                  <button onClick={() => handleShareMessage(msg.text)} className="flex items-center text-blue-600 hover:text-blue-700">
-                    <FaShareAlt />
-                  </button>
-                  <button onClick={() => setReplyTo(msg)} className="flex items-center text-blue-600 hover:text-blue-700">
-                    <FaReply />
-                  </button>
-                  <button onClick={() => requestAiResponse(msg.text, setMessages)} className="flex items-center text-blue-600 hover:text-blue-700">
-                    <FaRobot />
-                  </button>
+                  <button onClick={() => handleCopyMessage(msg.text)}><FaCopy /></button>
+                  <button onClick={() => handleDownloadMessage(msg.text)}><FaDownload /></button>
+                  <button onClick={() => handleShareMessage(msg.text)}><FaShareAlt /></button>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
-
-      <div className="p-4 flex items-center border-t bg-gradient-to-r from-blue-100 via-blue-200 to-blue-300 rounded-b-2xl">
+      
+      <div className="p-4 bg-gray-800 flex items-center rounded-b-lg shadow-md">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
-          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+          className="flex-1 p-3 rounded-lg bg-gray-700 text-white border-none outline-none"
         />
-        <button
-          onClick={handleSendMessage}
-          className="ml-3 px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-all flex items-center"
-        >
+        <button onClick={handleSendMessage} className="ml-3 bg-blue-700 text-white px-5 py-3 rounded-lg flex items-center shadow-md hover:bg-blue-600">
           <FaPaperPlane className="mr-2" /> Send
         </button>
       </div>

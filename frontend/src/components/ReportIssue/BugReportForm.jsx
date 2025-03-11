@@ -1,8 +1,8 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
 import { Formik, Field, Form } from "formik";
 import * as Yup from "yup";
-import { db, addDoc, collection } from "../../utils/firebase-config";
 import { useNavigate } from "react-router-dom";
 
 const BugReportForm = () => {
@@ -20,15 +20,11 @@ const BugReportForm = () => {
   const handleSubmit = async (values) => {
     setSubmitting(true);
     try {
-      // Add bug report to Firebase collection
-      await addDoc(collection(db, "bugReports"), {
-        ...values,
-        timestamp: new Date(),
-      });
+      await axios.post("http://localhost:5000/api/bugReports", values);
       alert("Bug report submitted successfully.");
-      navigate("/dashboard"); // Navigate to the dashboard or other page after submission
+      navigate("/dashboard");
     } catch (error) {
-      console.error("Error adding document: ", error);
+      console.error("Error submitting bug report: ", error);
       alert("Error submitting bug report. Please try again.");
     } finally {
       setSubmitting(false);
@@ -76,21 +72,18 @@ const BugReportForm = () => {
               />
             </div>
             <div>
-              <FormControlLabel
-                control={
-                  <Field
-                    name="agreeToTerms"
-                    type="checkbox"
-                    component={Checkbox}
-                    color="primary"
+              <Field name="agreeToTerms">
+                {({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox {...field} checked={field.value} color="primary" />}
+                    label={
+                      <span>
+                        I agree to the <a href="/privacy-policy" className="text-blue-500">Privacy Policy</a> and <a href="/terms-of-use" className="text-blue-500">Terms of Use</a>.
+                      </span>
+                    }
                   />
-                }
-                label={
-                  <span>
-                    I agree to the <a href="/privacy-policy" className="text-blue-500">Privacy Policy</a> and <a href="/terms-of-use" className="text-blue-500">Terms of Use</a>.
-                  </span>
-                }
-              />
+                )}
+              </Field>
               {touched.agreeToTerms && errors.agreeToTerms && (
                 <div className="text-red-500 text-sm mt-1">{errors.agreeToTerms}</div>
               )}
