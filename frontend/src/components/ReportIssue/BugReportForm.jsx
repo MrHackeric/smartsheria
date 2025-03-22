@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
+import { Button, Checkbox, FormControlLabel, TextField, Container, Paper, Typography, CircularProgress } from "@mui/material";
 import { Formik, Field, Form } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
@@ -8,44 +8,81 @@ import { useNavigate } from "react-router-dom";
 const BugReportForm = () => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
-  // Validation schema using Yup
+  useEffect(() => {
+    const storedEmail = sessionStorage.getItem("userEmail");
+    if (storedEmail) setUserEmail(storedEmail);
+  }, []);
+
   const validationSchema = Yup.object({
-    issueDescription: Yup.string().required("Description is required").min(10, "Must be at least 10 characters"),
-    systemEnvironment: Yup.string().required("System environment is required"),
+    email: Yup.string().email("Invalid email format").required("Email is required"),
+    operatingSystem: Yup.string().required("Operating system is required"),
+    browser: Yup.string().required("Browser is required"),
+    issueDescription: Yup.string().required("Issue description is required").min(10, "Must be at least 10 characters"),
     agreeToTerms: Yup.bool().oneOf([true], "You must agree to the privacy policy and terms of use").required(),
   });
 
-  // Handle form submission
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (values, { resetForm }) => {
     setSubmitting(true);
     try {
-      await axios.post("http://localhost:5000/api/bugReports", values);
-      alert("Bug report submitted successfully.");
-      navigate("/dashboard");
+        await axios.post("http://localhost:5000/api/bugReports", values);
+        alert("Bug report submitted successfully.");
+        resetForm();
+        navigate("/report");
     } catch (error) {
-      console.error("Error submitting bug report: ", error);
-      alert("Error submitting bug report. Please try again.");
+        console.error("Error submitting bug report:", error);
+        alert("Error submitting bug report. Please try again.");
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-lg mx-auto bg-white shadow-lg rounded-xl p-6 mt-8">
-      <h2 className="text-2xl font-bold text-center mb-6">Report a System Bug or Issue</h2>
-      <Formik
-        initialValues={{
-          issueDescription: "",
-          systemEnvironment: "",
-          agreeToTerms: false,
-        }}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-      >
-        {({ errors, touched }) => (
-          <Form className="space-y-6">
-            <div>
+    <Container maxWidth="sm">
+      <Paper elevation={6} className="p-6 mt-10 rounded-lg">
+        <h2 className="text-2xl font-bold text-center mb-6">Report a System Bug or Issue</h2>
+        <Formik
+          initialValues={{
+            email: userEmail || "",
+            operatingSystem: "",
+            browser: "",
+            issueDescription: "",
+            agreeToTerms: false,
+          }}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize
+        >
+          {({ errors, touched }) => (
+            <Form className="space-y-4">
+              <Field
+                name="email"
+                as={TextField}
+                label="Email"
+                variant="outlined"
+                fullWidth
+                error={touched.email && !!errors.email}
+                helperText={touched.email ? errors.email : ""}
+              />
+              <Field
+                name="operatingSystem"
+                as={TextField}
+                label="Operating System"
+                variant="outlined"
+                fullWidth
+                error={touched.operatingSystem && !!errors.operatingSystem}
+                helperText={touched.operatingSystem ? errors.operatingSystem : ""}
+              />
+              <Field
+                name="browser"
+                as={TextField}
+                label="Browser"
+                variant="outlined"
+                fullWidth
+                error={touched.browser && !!errors.browser}
+                helperText={touched.browser ? errors.browser : ""}
+              />
               <Field
                 name="issueDescription"
                 as={TextField}
@@ -54,56 +91,32 @@ const BugReportForm = () => {
                 fullWidth
                 multiline
                 rows={4}
-                helperText={touched.issueDescription ? errors.issueDescription : ""}
                 error={touched.issueDescription && !!errors.issueDescription}
+                helperText={touched.issueDescription ? errors.issueDescription : ""}
               />
-            </div>
-            <div>
-              <Field
-                name="systemEnvironment"
-                as={TextField}
-                label="System Environment (OS, Browser, etc.)"
-                variant="outlined"
-                fullWidth
-                multiline
-                rows={2}
-                helperText={touched.systemEnvironment ? errors.systemEnvironment : ""}
-                error={touched.systemEnvironment && !!errors.systemEnvironment}
-              />
-            </div>
-            <div>
               <Field name="agreeToTerms">
                 {({ field }) => (
                   <FormControlLabel
                     control={<Checkbox {...field} checked={field.value} color="primary" />}
-                    label={
-                      <span>
-                        I agree to the <a href="/privacy-policy" className="text-blue-500">Privacy Policy</a> and <a href="/terms-of-use" className="text-blue-500">Terms of Use</a>.
-                      </span>
-                    }
+                    label={<span>I agree to the <a href="/privacy-policy" className="text-blue-500">Privacy Policy</a> and <a href="/terms-of-use" className="text-blue-500">Terms of Use</a>.</span>}
                   />
                 )}
               </Field>
               {touched.agreeToTerms && errors.agreeToTerms && (
-                <div className="text-red-500 text-sm mt-1">{errors.agreeToTerms}</div>
+                <Typography color="error" variant="body2">
+                  {errors.agreeToTerms}
+                </Typography>
               )}
-            </div>
-            <div className="flex justify-center">
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-                disabled={submitting}
-                className="w-full"
-              >
-                {submitting ? "Submitting..." : "Submit Report"}
-              </Button>
-            </div>
-          </Form>
-        )}
-      </Formik>
-    </div>
+              <div className="flex justify-center">
+                <Button type="submit" variant="contained" color="primary" fullWidth size="large" disabled={submitting}>
+                  {submitting ? <CircularProgress size={24} color="inherit" /> : "Submit Report"}
+                </Button>
+              </div>
+            </Form>
+          )}
+        </Formik>
+      </Paper>
+    </Container>
   );
 };
 

@@ -1,176 +1,103 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import { TextField, IconButton, CircularProgress, Avatar, Typography } from '@mui/material';
-import { Send as SendIcon } from '@mui/icons-material';
-import { styled } from '@mui/system';
+import React, { useState, useEffect } from "react";
 
-const API_URL = 'http://localhost:5000/api/messages'; // Update with your backend URL
-
-// Custom styled components for modern design
-const ChatContainer = styled('div')({
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100vh',
-  maxWidth: '800px',
-  margin: '0 auto',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  borderRadius: '12px',
-  overflow: 'hidden',
-  backgroundColor: '#f9fafb',
-});
-
-const ChatHeader = styled('div')({
-  padding: '16px',
-  backgroundColor: '#4f46e5',
-  color: '#fff',
-  textAlign: 'center',
-  fontSize: '1.25rem',
-  fontWeight: 'bold',
-  borderBottom: '1px solid #e5e7eb',
-});
-
-const ChatMessages = styled('div')({
-  flex: 1,
-  padding: '16px',
-  overflowY: 'auto',
-  backgroundColor: '#fff',
-});
-
-const MessageBubble = styled('div')(({ sender }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  marginBottom: '12px',
-  justifyContent: sender === 'user' ? 'flex-end' : 'flex-start',
-}));
-
-const MessageContent = styled('div')(({ sender }) => ({
-  maxWidth: '70%',
-  padding: '12px 16px',
-  borderRadius: sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0',
-  backgroundColor: sender === 'user' ? '#4f46e5' : '#e5e7eb',
-  color: sender === 'user' ? '#fff' : '#000',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-}));
-
-const ChatInputContainer = styled('div')({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '16px',
-  backgroundColor: '#fff',
-  borderTop: '1px solid #e5e7eb',
-});
-
-const TypingIndicator = styled('div')({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '8px',
-  fontSize: '0.875rem',
-  color: '#6b7280',
-});
-
-function Chatbot() {
+const Chatbot = () => {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
 
   useEffect(() => {
-    fetchMessages();
+    const fetchChatHistory = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/chat/history");
+        const data = await response.json();
+        setMessages(data.messages);
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+      }
+    };
+
+    fetchChatHistory();
   }, []);
 
-  const fetchMessages = async () => {
-    try {
-      const response = await axios.get(API_URL);
-      setMessages(response.data);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSendMessage = async () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { text: input, sender: 'user' };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-    setInput('');
-    setLoading(true);
+    const userMessage = { text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setTyping(true);
 
     try {
-      const response = await axios.post(API_URL, { text: input });
-      const botMessage = response.data;
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
+      const response = await fetch("http://localhost:5000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
+      });
+
+      const data = await response.json();
+      setTyping(false);
+
+      if (data.response) {
+        simulateTyping(data.response);
+      }
     } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setLoading(false);
-      scrollToBottom();
+      console.error("Error fetching response:", error);
+      setTyping(false);
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+  const simulateTyping = (text) => {
+    let index = 0;
+    setMessages((prev) => [...prev, { text: "", sender: "ai" }]);
+
+    const interval = setInterval(() => {
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastIndex = newMessages.length - 1;
+
+        if (newMessages[lastIndex].sender === "ai") {
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            text: text.slice(0, index + 1),
+          };
+        }
+
+        return newMessages;
+      });
+
+      index++;
+      if (index === text.length) clearInterval(interval);
+    }, 100);
   };
 
   return (
-    <ChatContainer>
-      <ChatHeader>
-        <Typography variant="h6">💬 SmartSheria Chatbot</Typography>
-      </ChatHeader>
-
-      <ChatMessages>
-        {messages.map((msg, index) => (
-          <MessageBubble key={index} sender={msg.sender}>
-            {msg.sender === 'bot' && (
-              <Avatar sx={{ bgcolor: '#4f46e5', marginRight: '8px' }}>🤖</Avatar>
-            )}
-            <MessageContent sender={msg.sender}>
-              <Typography variant="body1">{msg.text}</Typography>
-            </MessageContent>
-            {msg.sender === 'user' && (
-              <Avatar sx={{ bgcolor: '#10b981', marginLeft: '8px' }}>👤</Avatar>
-            )}
-          </MessageBubble>
+    <div className="max-w-lg mx-auto bg-gray-100 p-4 rounded-lg shadow-md">
+      <div className="h-96 overflow-y-auto p-2">
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`mb-2 p-2 rounded-lg ${
+              msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+            }`}
+          >
+            {msg.text}
+          </div>
         ))}
-        {loading && (
-          <TypingIndicator>
-            <CircularProgress size={16} color="inherit" />
-            <Typography variant="body2" sx={{ marginLeft: '8px' }}>
-              SmartSheria is typing...
-            </Typography>
-          </TypingIndicator>
-        )}
-        <div ref={messagesEndRef}></div>
-      </ChatMessages>
-
-      <ChatInputContainer>
-        <TextField
+        {typing && <div className="text-gray-500">AI is typing...</div>}
+      </div>
+      <div className="flex mt-2">
+        <input
+          className="flex-1 p-2 border rounded-l-lg"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          fullWidth
-          placeholder="Type your message..."
-          variant="outlined"
-          size="small"
-          sx={{ marginRight: '8px' }}
+          placeholder="Type a message..."
         />
-        <IconButton
-          color="primary"
-          onClick={handleSendMessage}
-          disabled={loading || !input.trim()}
-        >
-          <SendIcon />
-        </IconButton>
-      </ChatInputContainer>
-    </ChatContainer>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-r-lg" onClick={sendMessage}>
+          Send
+        </button>
+      </div>
+    </div>
   );
-}
+};
 
 export default Chatbot;

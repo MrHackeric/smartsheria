@@ -1,50 +1,118 @@
 import React, { useState } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaPhone, FaSpinner } from 'react-icons/fa';
-import sxiosInstance from '../../utils/axiosInstance';
-import { useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { Link, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 const SignUpPage = () => {
   const navigate = useNavigate();
-
-  // State variables
-  const [fullName, setFullName] = useState('');
-  const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [agreedToPrivacyPolicy, setAgreedToPrivacyPolicy] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+    confirmPassword: '',
+    agreedToPrivacyPolicy: false,
+  });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('');
+  const [passwordsMatch, setPasswordsMatch] = useState(false);
+  const [isTypingPassword, setIsTypingPassword] = useState(false);
+  const [isTypingConfirmPassword, setIsTypingConfirmPassword] = useState(false);
 
-  // Handle sign-up logic
-  const handleSignUp = async () => {
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+  const passwordCriteria = {
+    length: formData.password.length >= 8,
+    uppercase: /[A-Z]/.test(formData.password),
+    lowercase: /[a-z]/.test(formData.password),
+    number: /\d/.test(formData.password),
+    specialChar: /[@$!%*?&]/.test(formData.password),
+  };
+
+  const evaluatePasswordStrength = () => {
+    const criteriaMet = Object.values(passwordCriteria).filter(Boolean).length;
+    if (criteriaMet < 2) return 'Poor';
+    if (criteriaMet < 4) return 'Weak';
+    if (criteriaMet === 4) return 'Medium';
+    return 'Strong';
+  };
+
+  const handleChange = (e) => {
+    const { id, value, type, checked } = e.target;
+    const updatedData = { ...formData, [id]: type === 'checkbox' ? checked : value };
+    setFormData(updatedData);
+  
+    if (id === 'password') {
+      setIsTypingPassword(value.length > 0);
+      setPasswordStrength(evaluatePasswordStrength());
     }
+  
+    if (id === 'confirmPassword') {
+      setIsTypingConfirmPassword(value.length > 0);
+      setPasswordsMatch(updatedData.password === value);
+    }
+  };
 
-    if (!agreedToPrivacyPolicy) {
-      setError('You must agree to the Privacy Policy to proceed');
-      return;
+  const handleSignUp = async () => {
+    if (isLoading) return;
+
+    if (!passwordsMatch || passwordStrength === "Poor" || passwordStrength === "Weak") {
+        setError("Please ensure your password meets all criteria and matches.");
+        return;
+    }
+    if (!formData.agreedToPrivacyPolicy) {
+        setError("You must agree to the Privacy Policy.");
+        return;
     }
 
     try {
-      setIsLoading(true);
-      setError('');
-      const userData = { fullName, userName, email, phoneNumber, password };
+        setIsLoading(true);
+        setError("");
 
-      const response = await axiosInstance.post('http://localhost:3000/api/user/register', userData);
+        const { fullName, email, phoneNumber, password } = formData;
 
-      console.log('User created successfully:', response.data);
-      navigate('/community');
+        console.log("Sending request...");
+
+        // Send sign-up request
+        const response = await axiosInstance.post("/signup", { fullName, email, phoneNumber, password });
+
+        console.log("Backend Response:", response.data);
+
+        if (response.status === 201) {
+            const { token, user } = response.data;
+
+            if (!token) {
+                throw new Error("Authentication token missing in response.");
+            }
+
+            // ✅ Store authentication details securely in sessionStorage
+            sessionStorage.setItem("authToken", token);
+            sessionStorage.setItem("userId", response.data.userId);
+            sessionStorage.setItem("user", JSON.stringify(user));
+            sessionStorage.setItem("userEmail", response.data.email);
+
+            navigate("/verify-email-signup");
+        } else {
+            setError("Sign-up failed. Please try again.");
+        }
     } catch (error) {
-      console.error('Error creating user:', error);
-      setError(error.response?.data?.message || 'An error occurred while signing up.');
+        console.error("Sign-up error:", error.response?.data || error.message);
+
+        if (error.response?.status === 400) {
+            setError("User already exists. Please log in.");
+        } else if (error.response?.status === 500) {
+            setError("Server error. Please try again later.");
+        } else {
+            setError(error.response?.data?.message || "An error occurred while signing up.");
+        }
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
@@ -53,136 +121,52 @@ const SignUpPage = () => {
 
         {error && <p className="text-red-500 text-center">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Full Name Input */}
-          <div className="relative mb-4">
-            <label htmlFor="fullName" className="block text-gray-700 font-medium mb-2">Full Name</label>
-            <div className="flex items-center border border-gray-300 rounded-lg p-2">
-              <FaUser className="text-gray-400 mr-2" />
-              <input
-                type="text"
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full focus:outline-none focus:border-blue-400"
-                placeholder="Enter your full name"
-              />
-            </div>
-          </div>
+        <input type="text" id="fullName" placeholder="Full Name" className="w-full border p-2" value={formData.fullName} onChange={handleChange} />
+        <input type="tel" id="phoneNumber" placeholder="Phone Number" className="w-full border p-2" value={formData.phoneNumber} onChange={handleChange} />
+        <input type="email" id="email" placeholder="Email" className="w-full border p-2" value={formData.email} onChange={handleChange} />
 
-          {/* User Name Input */}
-          <div className="relative mb-4">
-            <label htmlFor="userName" className="block text-gray-700 font-medium mb-2">User Name</label>
-            <div className="flex items-center border border-gray-300 rounded-lg p-2">
-              <FaUser className="text-gray-400 mr-2" />
-              <input
-                type="text"
-                id="userName"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                className="w-full focus:outline-none focus:border-blue-400"
-                placeholder="Enter a unique username"
-              />
-            </div>
-          </div>
+        <div className="relative">
+          <input type={showPassword ? 'text' : 'password'} id="password" placeholder="Password" className="w-full border p-2" value={formData.password} onChange={handleChange} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3">{showPassword ? <FaEyeSlash /> : <FaEye />}</button>
         </div>
 
-        {/* Phone Number Input */}
-        <div className="relative mb-4">
-          <label htmlFor="phoneNumber" className="block text-gray-700 font-medium mb-2">Phone Number</label>
-          <div className="flex items-center border border-gray-300 rounded-lg p-2">
-            <FaPhone className="text-gray-400 mr-2" />
-            <input
-              type="tel"
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full focus:outline-none focus:border-blue-400"
-              placeholder="Enter your phone number"
-            />
-          </div>
+        <ul className="text-sm text-gray-600">
+          <li className={passwordCriteria.length ? 'text-green-600' : 'text-red-500'}>At least 8 characters</li>
+          <li className={passwordCriteria.uppercase ? 'text-green-600' : 'text-red-500'}>At least one uppercase letter</li>
+          <li className={passwordCriteria.lowercase ? 'text-green-600' : 'text-red-500'}>At least one lowercase letter</li>
+          <li className={passwordCriteria.number ? 'text-green-600' : 'text-red-500'}>At least one number</li>
+          <li className={passwordCriteria.specialChar ? 'text-green-600' : 'text-red-500'}>At least one special character</li>
+        </ul>
+        {isTypingPassword && (
+          <p className={`font-bold ${passwordStrength === 'Strong' ? 'text-green-600' : passwordStrength === 'Medium' ? 'text-yellow-500' : 'text-red-500'}`}>
+            Strength: {passwordStrength}
+          </p>
+        )}
+
+        {isTypingConfirmPassword && (
+          <p className={passwordsMatch ? 'text-green-600' : 'text-red-500'}>
+            {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
+          </p>
+        )}
+
+        <div className="relative">
+          <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" placeholder="Confirm Password" className="w-full border p-2" value={formData.confirmPassword} onChange={handleChange} />
+          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3">{showConfirmPassword ? <FaEyeSlash /> : <FaEye />}</button>
         </div>
 
-        {/* Email Input */}
-        <div className="relative mb-4">
-          <label htmlFor="email" className="block text-gray-700 font-medium mb-2">Email</label>
-          <div className="flex items-center border border-gray-300 rounded-lg p-2">
-            <FaEnvelope className="text-gray-400 mr-2" />
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full focus:outline-none focus:border-blue-400"
-              placeholder="Enter your email"
-            />
-          </div>
+        <div className="flex items-center">
+          <input type="checkbox" id="agreedToPrivacyPolicy" checked={formData.agreedToPrivacyPolicy} onChange={handleChange} />
+          <label htmlFor="agreedToPrivacyPolicy" className="ml-2">I agree to the <a href="/privacy" className="text-blue-500 underline">Privacy Policy</a>.</label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Password Input */}
-          <div className="relative mb-4">
-            <label htmlFor="password" className="block text-gray-700 font-medium mb-2">Password</label>
-            <div className="flex items-center border border-gray-300 rounded-lg p-2">
-              <FaLock className="text-gray-400 mr-2" />
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full focus:outline-none focus:border-blue-400"
-                placeholder="Create a password"
-              />
-            </div>
-          </div>
-
-          {/* Confirm Password Input */}
-          <div className="relative mb-4">
-            <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-2">Confirm Password</label>
-            <div className="flex items-center border border-gray-300 rounded-lg p-2">
-              <FaLock className="text-gray-400 mr-2" />
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full focus:outline-none focus:border-blue-400"
-                placeholder="Confirm your password"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Privacy Policy Agreement Checkbox */}
-        <div className="flex items-center mb-4">
-          <input
-            type="checkbox"
-            id="privacyPolicy"
-            checked={agreedToPrivacyPolicy}
-            onChange={(e) => setAgreedToPrivacyPolicy(e.target.checked)}
-            className="mr-2"
-          />
-          <label htmlFor="privacyPolicy" className="text-gray-600">
-            I agree to the <a href="/privacy" className="text-blue-500 hover:underline">Privacy Policy</a>.
-          </label>
-        </div>
-
-        {/* Sign Up Button */}
-        <button
-          onClick={handleSignUp}
-          disabled={isLoading || !agreedToPrivacyPolicy}
-          className={`w-full py-3 text-lg font-semibold text-white rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 ${
-            isLoading || !agreedToPrivacyPolicy ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {isLoading ? (
-            <div className="flex justify-center items-center">
-              <FaSpinner className="animate-spin mr-2" /> Signing up...
-            </div>
-          ) : (
-            'Sign Up'
-          )}
+        <button onClick={handleSignUp} disabled={isLoading || !passwordsMatch || passwordStrength === 'Poor' || passwordStrength === 'Weak'} className={`w-full py-3 text-lg font-semibold text-white rounded-lg ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+          {isLoading ? <FaSpinner className="animate-spin" /> : 'Sign Up'}
         </button>
+
+        <p className="text-center text-gray-600 mt-4">
+          Already have an account? <Link to="/login" className="text-blue-500 hover:underline">Login</Link>
+        </p>
+
       </div>
     </div>
   );

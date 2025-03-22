@@ -1,89 +1,102 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AiOutlineTeam, AiOutlineMessage, AiOutlineBell, AiOutlineSetting, AiOutlineFileText } from 'react-icons/ai'; // Community, Chatbot, Notifications, Settings, Report
-import MenuIcon from '@mui/icons-material/Menu'; // Hamburger menu for mobile
-import CloseIcon from '@mui/icons-material/Close'; // Close icon for mobile menu
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../utils/axiosInstance';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  AiOutlineTeam,
+  AiOutlineMessage,
+  AiOutlineSetting,
+  AiOutlineFileText,
+} from "react-icons/ai";
+import { FiLogOut } from "react-icons/fi";
+import { HiOutlineMenuAlt2 } from "react-icons/hi";
+import CloseIcon from "@mui/icons-material/Close";
+import axiosInstance from "../../utils/axiosInstance";
 
 const Header = () => {
-  const [menuOpen, setMenuOpen] = useState(false); // State for mobile menu
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      const response = await axiosInstance.post("http://localhost:3000/api/user/logout", {}, { withCredentials: true });
+      // Call the backend logout API
+      await axiosInstance.post("/logout");
   
-      if (response.status === 200) {
-        console.log("Logged out successfully");
+      // Clear session storage
+      sessionStorage.clear();
   
-        // Clear session storage to remove user session
-        sessionStorage.clear();
-  
-        // Redirect user to login page
-        navigate("/login");
-      }
+      // Redirect to Sign-in page
+      navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Logout failed", error);
+      console.error("Logout failed:", error);
     }
   };
 
   return (
-    <header className="bg-gradient-to-r from-purple-900 to-blue-900 text-white shadow-md py-4 fixed w-full z-50">
-      <div className="container mx-auto flex justify-between items-center px-4">
-        {/* Logo/Title */}
-        <div className="text-3xl font-bold text-gold">
-          Smart Sheria
+    <div className="flex">
+      {/* Sidebar Toggle Button */}
+      <button
+        className="fixed top-5 left-5 z-50 p-2 bg-blue-800 text-white rounded-md lg:hidden"
+        onClick={() => setIsOpen(true)}
+      >
+        <HiOutlineMenuAlt2 size={24} />
+      </button>
+
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-purple-900 to-blue-900 text-white shadow-lg p-5 transition-transform duration-300 ease-in-out z-40 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 lg:w-72 flex flex-col justify-between`}
+      >
+        <div>
+          {/* Sidebar Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gold">Smart Sheria</h1>
+            <button
+              className="lg:hidden text-white"
+              onClick={() => setIsOpen(false)}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex flex-col space-y-6">
+            <SidebarLink to="/community" Icon={AiOutlineTeam} label="Community" />
+            <SidebarLink to="/chatbot" Icon={AiOutlineMessage} label="Chatbot" />
+            <SidebarLink to="/settings" Icon={AiOutlineSetting} label="Settings" />
+            <SidebarLink to="/report" Icon={AiOutlineFileText} label="Report" />
+          </nav>
         </div>
 
-        {/* Mobile Hamburger Icon */}
+        {/* Logout Button at Bottom */}
         <button
-          className="lg:hidden text-white"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={handleLogout}
+          className="flex items-center space-x-3 text-white hover:text-red-300 transition duration-300 ease-in-out py-2 mb-6"
         >
-          {menuOpen ? <CloseIcon /> : <MenuIcon />}
+          <FiLogOut size={22} />
+          <span>Logout</span>
         </button>
-
-        {/* Navigation Links */}
-        <nav className={`lg:flex space-x-10 items-center transition-all duration-300 ease-in-out ${menuOpen ? 'flex-col space-y-6 absolute top-16 left-0 right-0 bg-blue-800 py-4 px-6' : 'hidden lg:flex'}`}>
-          <Link to="/community" className="flex flex-col items-center text-white hover:text-gold transition duration-300 ease-in-out">
-            <AiOutlineTeam size={20} />
-            <span className="text-sm mt-1">Community</span>
-          </Link>
-
-          <Link to="/chatbot" className="flex flex-col items-center text-white hover:text-gold transition duration-300 ease-in-out">
-            <AiOutlineMessage size={20} />
-            <span className="text-sm mt-1">Chatbot</span>
-          </Link>
-
-          <Link to="/notifications" className="flex flex-col items-center text-white hover:text-gold transition duration-300 ease-in-out">
-            <AiOutlineBell size={20} />
-            <span className="text-sm mt-1">Notifications</span>
-          </Link>
-
-          <Link to="/settings" className="flex flex-col items-center text-white hover:text-gold transition duration-300 ease-in-out">
-            <AiOutlineSetting size={20} />
-            <span className="text-sm mt-1">Settings</span>
-          </Link>
-
-          <Link to="/report" className="flex flex-col items-center text-white hover:text-gold transition duration-300 ease-in-out">
-            <AiOutlineFileText size={20} />
-            <span className="text-sm mt-1">Report</span>
-          </Link>
-
-          <button 
-            onClick={handleLogout} 
-            className="flex flex-col items-center text-white hover:text-red-300 transition duration-300 ease-in-out"
-          >
-            <ExitToAppIcon size={20} />
-            <span className="text-sm mt-1">Logout</span>
-          </button>
-
-        </nav>
       </div>
-    </header>
+
+      {/* Overlay for Mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 z-30 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        ></div>
+      )}
+    </div>
+  );
+};
+
+const SidebarLink = ({ to, Icon, label }) => {
+  return (
+    <Link
+      to={to}
+      className="flex items-center space-x-3 text-white hover:text-gold transition duration-300 ease-in-out py-2"
+    >
+      <Icon size={22} />
+      <span>{label}</span>
+    </Link>
   );
 };
 

@@ -1,20 +1,35 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react"; // Import useContext
 import { Button, TextField, Divider, Collapse } from "@mui/material";
 import { Formik, Field, Form } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
-import { useAuth } from "../../utils/AuthContext";
+
+// Assuming AuthContext is imported somewhere in the code
+import { useAuth } from '../../AuthContext'; // Example import path
 
 const EditProfile = () => {
-  const { currentUser } = useAuth();
   const [userData, setUserData] = useState({});
   const [loading, setLoading] = useState(true);
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
+  const currentUser = useContext(useAuth); // Now useContext will work
 
   useEffect(() => {
+    if (!currentUser || !currentUser._id) {
+      console.warn("No current user found. Fetch stopped.");
+      setLoading(false);
+      return;
+    }
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`/api/users/${currentUser._id}`, { withCredentials: true });
+        console.log("Fetching data for user:", currentUser?._id); // Debugging user ID
+        const response = await axios.get(`/fetch/users/${currentUser?._id}`, { withCredentials: true });
+    
+        if (!response.data || typeof response.data !== "object") {
+          console.error("Invalid user data received:", response.data);
+          return;
+        }
+    
+        console.log("User Data Response:", response.data);
         setUserData(response.data);
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -22,23 +37,33 @@ const EditProfile = () => {
         setLoading(false);
       }
     };
-    
-    if (currentUser) fetchUserData();
-  }, [currentUser]);
+    fetchUserData();
+  }, [currentUser]); // Adding currentUser to the dependency array
 
   const validationSchema = Yup.object({
-    firstName: Yup.string().required("First name is required"),
-    lastName: Yup.string().required("Last name is required"),
-    username: Yup.string().required("Username is required"),
+    fullname: Yup.string().required("Full name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
-    phone: Yup.string()
+    phoneNumber: Yup.string()
       .matches(/^[0-9]+$/, "Phone number must be numeric")
-      .required("Phone is required"),
+      .required("Phone number is required"),
   });
 
   const handleSubmit = async (values) => {
     try {
-      await axios.put(`/api/users/${currentUser._id}`, values, { withCredentials: true });
+      console.log("Submitting updated profile data:", values);
+
+      const token = sessionStorage.getItem("authToken");
+
+      if (!token) {
+        alert("Authentication required. Please log in again.");
+        return;
+      }
+
+      await axios.put(`/fetch/users/${userData._id}`, values, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile: ", error);
@@ -55,45 +80,23 @@ const EditProfile = () => {
       <Formik
         enableReinitialize
         initialValues={{
-          firstName: userData.firstName || "",
-          lastName: userData.lastName || "",
-          username: userData.username || "",
+          fullname: userData.fullname || "",
           email: userData.email || "",
-          phone: userData.phone || "",
+          phoneNumber: userData.phoneNumber || "",
         }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({ errors, touched }) => (
           <Form className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field
-                name="firstName"
-                as={TextField}
-                label="First Name"
-                variant="outlined"
-                fullWidth
-                error={touched.firstName && !!errors.firstName}
-                helperText={touched.firstName ? errors.firstName : ""}
-              />
-              <Field
-                name="lastName"
-                as={TextField}
-                label="Last Name"
-                variant="outlined"
-                fullWidth
-                error={touched.lastName && !!errors.lastName}
-                helperText={touched.lastName ? errors.lastName : ""}
-              />
-            </div>
             <Field
-              name="username"
+              name="fullname"
               as={TextField}
-              label="Username"
+              label="Full Name"
               variant="outlined"
               fullWidth
-              error={touched.username && !!errors.username}
-              helperText={touched.username ? errors.username : ""}
+              error={touched.fullname && !!errors.fullname}
+              helperText={touched.fullname ? errors.fullname : ""}
             />
             <Field
               name="email"
@@ -105,15 +108,18 @@ const EditProfile = () => {
               helperText={touched.email ? errors.email : ""}
             />
             <Field
-              name="phone"
+              name="phoneNumber"
               as={TextField}
               label="Phone Number"
               variant="outlined"
               fullWidth
-              error={touched.phone && !!errors.phone}
-              helperText={touched.phone ? errors.phone : ""}
+              error={touched.phoneNumber && !!errors.phoneNumber}
+              helperText={touched.phoneNumber ? errors.phoneNumber : ""}
             />
             <Divider className="my-4" />
+            <p className="text-sm text-gray-600 italic">
+              To change your password, please log out, proceed to login, select "Forgot Password," and follow the instructions.
+            </p>
             <Button fullWidth variant="outlined" onClick={toggleAdvancedSettings}>
               Advanced Settings
             </Button>

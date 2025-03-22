@@ -1,4 +1,4 @@
-// config/database.js (MongoDB Connection)
+//MongoDB Connection
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 

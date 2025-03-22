@@ -1,56 +1,53 @@
 import React, { useState } from 'react';
-import { FaLock, FaEnvelope, FaSpinner } from 'react-icons/fa';
+import { FaLock, FaEnvelope, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
-import bcrypt from 'bcryptjs'; // Use bcryptjs for the browser
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [suuccessMessae, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
+  const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
 
   const handleLogin = async () => {
     try {
-      setIsLoading(true);
+        setIsLoading(true);
 
-      if (!/\S+@\S+\.\S+/.test(email)) {
-        alert('Please enter a valid email.');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (password.length < 6) {
-        alert('Password must be at least 6 characters long.');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!email || !password) {
-        alert('Please enter both email and password.');
-        setIsLoading(false);
-        return;
-      }
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            setErrorMessage("Please enter a valid email.");
+            setIsLoading(false);
+            return;
+        }
 
-      // Proceed with sending login data to the server
-      const response = await axiosInstance.post('http://localhost:3000/api/user/login', { email, password },
-      { headers: { 'Content-Type': 'application/json' } });
-      console.log('Sending Payload:', { email, password });
+        const response = await axiosInstance.post("/login", { email, password });
 
-      if (response.status === 200) {
-        alert('Login successful');
-        navigate('/community');
-      } else {
-        alert('Invalid email or password');
-      }
+        if (response.status === 200) {
+            const { requiresOtp, token, user } = response.data;
+
+            if (requiresOtp) {
+                const userEmail = user?.email || email; // Ensure we get the email
+                sessionStorage.setItem("userEmail", userEmail); // Store it
+
+                setSuccessMessage("OTP sent to your email. Please verify.");
+                navigate("/otp-verification");
+                return;
+            }
+
+            sessionStorage.setItem("authToken", token);
+            navigate("/community");
+        }
     } catch (error) {
-      console.error('Login error:', error);
-      alert('An error occurred. Please try again.');
+        console.error("Login error:", error.response ? error.response.data : error.message);
+        setErrorMessage(error.response?.data?.message || "An error occurred. Please try again.");
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
@@ -59,11 +56,8 @@ const LoginPage = () => {
       <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6 space-y-4">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Login</h2>
 
-        {/* Email Input */}
         <div className="relative mb-4">
-          <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
-            Email
-          </label>
+          <label htmlFor="email" className="block text-gray-700 font-medium mb-2">Email</label>
           <div className="flex items-center border border-gray-300 rounded-lg p-2">
             <FaEnvelope className="text-gray-400 mr-2" />
             <input
@@ -77,25 +71,24 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* Password Input */}
         <div className="relative mb-4">
-          <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
-            Password
-          </label>
+          <label htmlFor="password" className="block text-gray-700 font-medium mb-2">Password</label>
           <div className="flex items-center border border-gray-300 rounded-lg p-2">
             <FaLock className="text-gray-400 mr-2" />
             <input
-              type="password"
+              type={isPasswordVisible ? 'text' : 'password'}
               id="password"
               value={password}
               onChange={handlePasswordChange}
               className="w-full focus:outline-none focus:border-blue-400"
               placeholder="Enter your password"
             />
+            <button type="button" onClick={togglePasswordVisibility} className="ml-2 focus:outline-none">
+              {isPasswordVisible ? <FaEyeSlash className="text-gray-500" /> : <FaEye className="text-gray-500" />}
+            </button>
           </div>
         </div>
 
-        {/* Login Button */}
         <button
           onClick={handleLogin}
           disabled={isLoading}
@@ -112,20 +105,14 @@ const LoginPage = () => {
           )}
         </button>
 
-        {/* Forgot Password Link */}
         <div className="mt-4 text-center">
-          <a href="/forgotpass" className="text-sm text-blue-500 hover:underline">
-            Forgot Password?
-          </a>
+          <a href="/forgotpass" className="text-sm text-blue-500 hover:underline">Forgot Password?</a>
         </div>
 
-        {/* Don't have an account Link */}
         <div className="mt-2 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
-            <a href="/signup" className="text-blue-500 hover:underline">
-              Sign Up
-            </a>
+            <a href="/signup" className="text-blue-500 hover:underline">Sign Up</a>
           </p>
         </div>
       </div>

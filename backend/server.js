@@ -4,16 +4,16 @@ import connectDB from './config/database.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
-
-import { Server } from 'socket.io';
 import { socketHandler } from './services/socketServices.js';
+
+// import chatbotRoutes from './routes/chatbotRoutes.js';
 import authRoutes from './routes/auth.js';
-import protectedRoutes from './routes/protected.js';
-import messageRoutes from './routes/messageRoutes.js';
 import communityMessageRoutes from './routes/communityMessageRoutes.js';
 
+import passChangeRoutes from './routes/passchange.js';
 import initializeSocket from './socket.js';
 import bugReportRoutes from "./routes/bugReportRoutes.js";
+import fetchUserRoutes from './routes/fetchUser.js';
 
 dotenv.config();
 connectDB();
@@ -55,12 +55,11 @@ io.on('connection', (socket) => {
 });
 
 // Use Routes
-app.use('/api/user', authRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/protected', protectedRoutes);
+app.use('/api', authRoutes);//Sign up here, Verify Credentials, Login
+app.use('/api/auth', passChangeRoutes);
 app.use('/api/communityMessages', communityMessageRoutes);
 app.use('/api/bugReports', bugReportRoutes);
+app.use('/fetch', fetchUserRoutes);
 
 //Socket.io Setup
 socketHandler(io);

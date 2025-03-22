@@ -1,20 +1,12 @@
+// aiService.js
 import { model, generationConfig } from '../utils/geminiConfig.js';
 import axios from 'axios';
 
-const CHATBOT_API_URL = 'http://localhost:5000/api/chatbot'; // Update with your actual chatbot API URL
+const CHATBOT_API_URL = 'http://localhost:5000/api/chatbot';
 
-/**
- * Generates an AI response using the Gemini model.
- * @param {string} userInput - The user's input message.
- * @returns {Promise<string>} - The AI-generated response.
- */
 export const generateAIResponse = async (userInput) => {
   try {
-    const chatSession = model.startChat({
-      generationConfig,
-      history: [],
-    });
-
+    const chatSession = model.startChat({ generationConfig, history: [] });
     const result = await chatSession.sendMessage(userInput);
     return result.response.text();
   } catch (error) {
@@ -23,11 +15,6 @@ export const generateAIResponse = async (userInput) => {
   }
 };
 
-/**
- * Sends a request to the chatbot backend API for an AI-generated response.
- * @param {string} text - The user's input message.
- * @returns {Promise<string>} - The AI-generated reply from the backend.
- */
 export const requestAiResponse = async (text) => {
   try {
     const response = await axios.post(CHATBOT_API_URL, { message: text });
