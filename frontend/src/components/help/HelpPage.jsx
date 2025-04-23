@@ -1,17 +1,17 @@
 import React from 'react';
 import Header from '../header/Header';
-import EditProfile from './EditProfile';
+import Help from './Help';
 
-const EditReportPage = () => {
+const HelpPage = () => {
   return (
     <div>
       {/* Header Section */}
       <Header />
       <div>
-          <EditProfile />
+        <Help />
       </div>
     </div>
   );
 };
 
-export default EditReportPage;
+export default HelpPage;

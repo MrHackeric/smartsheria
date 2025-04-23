@@ -5,6 +5,7 @@ import {
   AiOutlineMessage,
   AiOutlineSetting,
   AiOutlineFileText,
+  AiOutlineQuestionCircle,
 } from "react-icons/ai";
 import { FiLogOut } from "react-icons/fi";
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
@@ -17,13 +18,8 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      // Call the backend logout API
       await axiosInstance.post("/logout");
-  
-      // Clear session storage
       sessionStorage.clear();
-  
-      // Redirect to Sign-in page
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
@@ -32,7 +28,6 @@ const Header = () => {
 
   return (
     <div className="flex">
-      {/* Sidebar Toggle Button */}
       <button
         className="fixed top-5 left-5 z-50 p-2 bg-blue-800 text-white rounded-md lg:hidden"
         onClick={() => setIsOpen(true)}
@@ -40,34 +35,32 @@ const Header = () => {
         <HiOutlineMenuAlt2 size={24} />
       </button>
 
-      {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-purple-900 to-blue-900 text-white shadow-lg p-5 transition-transform duration-300 ease-in-out z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:w-72 flex flex-col justify-between`}
       >
         <div>
-          {/* Sidebar Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gold">Smart Sheria</h1>
-            <button
-              className="lg:hidden text-white"
-              onClick={() => setIsOpen(false)}
-            >
+            <button className="lg:hidden text-white" onClick={() => setIsOpen(false)}>
               <CloseIcon />
             </button>
           </div>
 
-          {/* Navigation Links */}
           <nav className="flex flex-col space-y-6">
             <SidebarLink to="/community" Icon={AiOutlineTeam} label="Community" />
             <SidebarLink to="/chatbot" Icon={AiOutlineMessage} label="Chatbot" />
             <SidebarLink to="/settings" Icon={AiOutlineSetting} label="Settings" />
             <SidebarLink to="/report" Icon={AiOutlineFileText} label="Report" />
+
+            {/* Extra spacing before Help */}
+            <div className="mt-4">
+              <SidebarLink to="/help" Icon={AiOutlineQuestionCircle} label="Help" />
+            </div>
           </nav>
         </div>
 
-        {/* Logout Button at Bottom */}
         <button
           onClick={handleLogout}
           className="flex items-center space-x-3 text-white hover:text-red-300 transition duration-300 ease-in-out py-2 mb-6"
@@ -77,7 +70,6 @@ const Header = () => {
         </button>
       </div>
 
-      {/* Overlay for Mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black opacity-50 z-30 lg:hidden"

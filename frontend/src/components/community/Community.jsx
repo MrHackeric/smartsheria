@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import io from "socket.io-client";
-import { FaPaperPlane, FaStar, FaCopy, FaDownload, FaShareAlt } from "react-icons/fa";
-import { styled } from "@mui/material/styles";
-import { Box, Paper, TextField, IconButton } from "@mui/material";
+import { Send, Star, Share2, Download, Copy, Search, Menu } from "lucide-react";
 import {
   handleStarMessage,
   handleCopyMessage,
@@ -11,96 +8,24 @@ import {
   formatText,
 } from "../../utils/messageUtils";
 
-const socket = io("http://localhost:5000"); // Adjust for your backend
-
-const ChatContainer = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  height: "90vh",
-  maxWidth: "1300px",
-  width: "100%",
-  margin: "2rem auto",
-  borderRadius: "16px",
-  overflow: "hidden",
-  background: "linear-gradient(to bottom, #4c1d95, #1e3a8a)",
-  color: "#fff",
-  boxShadow: "0 6px 15px rgba(0, 0, 0, 0.2)",
-});
-
-const ChatHeader = styled(Box)({
-  padding: "16px",
-  background: "#4c1d95",
-  textAlign: "center",
-  fontSize: "1.5rem",
-  fontWeight: "bold",
-});
-
-const ChatMessages = styled(Box)({
-  flex: 1,
-  padding: "16px",
-  overflowY: "auto",
-  backgroundColor: "#1e293b",
-  display: "flex",
-  flexDirection: "column",
-});
-
-const MessageBubble = styled(Box)(({ sender }) => ({
-  display: "flex",
-  alignItems: "center",
-  marginBottom: "12px",
-  justifyContent: sender === "user" ? "flex-end" : "flex-start",
-}));
-
-const MessageContent = styled(Paper)(({ sender }) => ({
-  maxWidth: "70%",
-  padding: "12px 16px",
-  borderRadius: sender === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
-  backgroundColor: sender === "user" ? "#1e40af" : "#334155",
-  color: sender === "user" ? "#fff" : "#e5e7eb",
-}));
-
-const ChatInputContainer = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  padding: "16px",
-  backgroundColor: "#4c1d95",
-});
-
-const TypingIndicator = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  padding: "6px",
-  fontSize: "0.875rem",
-  color: "#e5e7eb",
-});
-
 function Community() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [userId, setUserId] = useState(localStorage.getItem("userId") || Date.now());
-  const [starredMessages, setStarredMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const messagesEndRef = useRef(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [starredMessages, setStarredMessages] = useState([]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    localStorage.setItem("userId", userId);
     fetchMessages();
-
-    socket.on("message", (message) => {
-      setMessages((prev) => [...prev, message]);
-      setIsTyping(false);
-    });
-
-    socket.on("typing", () => {
-      setIsTyping(true);
-      setTimeout(() => setIsTyping(false), 2000);
-    });
-
-    return () => {
-      socket.off("message");
-      socket.off("typing");
-    };
   }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const fetchMessages = async () => {
     try {
@@ -113,82 +38,140 @@ function Community() {
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
-    const messageData = {
-      text: input,
-      senderId: userId,
-      timestamp: new Date().toISOString(),
+    if (!newMessage.trim()) return;
+
+    const message = {
+      text: newMessage,
+      senderId: "currentUserId", // Replace with actual user ID
     };
 
-    socket.emit("message", messageData);
-    setInput("");
+    try {
+      const response = await fetch("http://localhost:5000/api/communityMessages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+      });
+
+      if (response.ok) {
+        fetchMessages();
+      } else {
+        console.error("Failed to send message");
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+
+    setNewMessage("");
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   return (
-    <ChatContainer>
-      <ChatHeader>Community Chat</ChatHeader>
+    <div className="w-full h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex justify-center items-center p-4 md:p-6">
+      <div className="w-full max-w-6xl h-[700px] bg-slate-900 border border-gray-700 rounded-xl shadow-lg flex flex-col transition-all duration-300 ease-in-out transform hover:scale-105">
+        {/* Header */}
+        <div className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
+          <button
+            className="md:hidden text-gray-400 hover:text-white"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="flex-1 px-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search discussions..."
+                className="w-full bg-slate-700 text-white rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+        </div>
 
-      <ChatMessages>
-        {messages.map((msg, index) => {
-          const isUser = msg.senderId === userId;
-          const isStarred = starredMessages.some((m) => m.timestamp === msg.timestamp);
-          return (
-            <MessageBubble key={index} sender={isUser ? "user" : "other"}>
-              <MessageContent sender={isUser ? "user" : "other"}>
-                <p dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
-                <small className="block text-xs mt-1 text-gray-400">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </small>
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto h-[450px] p-6 space-y-4 w-full">
+          {messages.map((message) => {
+            const isSentByCurrentUser = message.senderId === "currentUserId";
+            return (
+              <div
+                key={message._id}
+                className={`flex ${isSentByCurrentUser ? "justify-end" : "justify-start"} transition-all duration-300 ease-in-out transform hover:scale-[1.02]`}
+              >
+                <div
+                  className={`p-4 rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl ${
+                    isSentByCurrentUser ? "bg-blue-950 text-white" : "bg-slate-800 text-gray-300"
+                  } max-w-sm md:max-w-lg lg:max-w-xl`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p
+                    className="mt-2"
+                    dangerouslySetInnerHTML={{ __html: formatText(message.text) }}
+                  ></p>
+                  <div className="mt-3 flex items-center space-x-4">
+                    <button
+                      className={`${
+                        starredMessages.some((msg) => msg.timestamp === message.timestamp)
+                          ? "text-yellow-400"
+                          : "text-gray-400 hover:text-blue-400"
+                      } transition-colors`}
+                      onClick={() => handleStarMessage(message, starredMessages, setStarredMessages)}
+                    >
+                      <Star className="h-4 w-4" />
+                    </button>
+                    <button
+                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                      onClick={() => handleShareMessage(message.text)}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                      onClick={() => handleCopyMessage(message.text)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                    <button
+                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                      onClick={() => handleDownloadMessage(message.text)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
 
-                {/* Action Buttons */}
-                <Box display="flex" mt={1} gap={1} color="gray.300">
-                  <IconButton size="small" onClick={() => handleStarMessage(msg, starredMessages, setStarredMessages)}>
-                    <FaStar className={`${isStarred ? "text-yellow-400" : "text-gray-400"}`} />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => handleCopyMessage(msg.text)}>
-                    <FaCopy />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => handleDownloadMessage(msg.text)}>
-                    <FaDownload />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => handleShareMessage(msg.text)}>
-                    <FaShareAlt />
-                  </IconButton>
-                </Box>
-              </MessageContent>
-            </MessageBubble>
-          );
-        })}
-        {isTyping && <TypingIndicator>Someone is typing...</TypingIndicator>}
-        <div ref={messagesEndRef} />
-      </ChatMessages>
-
-      <ChatInputContainer>
-        <TextField
-          fullWidth
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            socket.emit("typing");
-          }}
-          placeholder="Type your message..."
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1e293b",
-            color: "#fff",
-            borderRadius: "8px",
-            "& input": { color: "#fff" },
-          }}
-        />
-        <IconButton onClick={handleSendMessage} sx={{ ml: 2, backgroundColor: "#1e40af", color: "#fff" }}>
-          <FaPaperPlane />
-        </IconButton>
-      </ChatInputContainer>
-    </ChatContainer>
+        {/* Input */}
+        <div className="bg-slate-800 border-t border-slate-700 p-4">
+          <div className="flex items-center space-x-4">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Share your legal expertise..."
+              className="flex-1 bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSendMessage();
+              }}
+            />
+            <button
+              onClick={handleSendMessage}
+              className="bg-blue-500 text-white rounded-lg p-2 hover:bg-blue-600 transition-colors"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

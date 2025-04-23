@@ -1,42 +1,31 @@
 import Message from "../models/messageModel.js";
-import CommunityMessage from "../models/communityMessageModel.js"; 
-import { fetchGeminiResponse } from "../utils/geminiApi.js";
+import { generateAIResponse } from "./aiService.js";
 
-// Save user message to DB
-export const saveMessage = async (messageData) => {
-  try {
-    const message = new CommunityMessage(messageData);
-    return await message.save();
-  } catch (error) {
-    throw new Error("Error saving message: " + error.message);
-  }
-};
-
-// Fetch all messages from DB
-export const fetchMessages = async () => {
-  try {
-    return await CommunityMessage.find().sort({ timestamp: 1 });
-  } catch (error) {
-    throw new Error("Error fetching messages: " + error.message);
-  }
-};
-
-// Process user message and get AI response
+// Process user message, generate AI response, and store both in DB
 export const processUserMessage = async (text, senderId) => {
   try {
     // Save user message
-    const userMessage = new Message({ text, sender: senderId });
+    const userMessage = new Message({ senderId, text, isBot: false });
     await userMessage.save();
 
-    // Get AI response
-    const botResponseText = await fetchGeminiResponse(text);
+    // Generate AI response
+    const aiResponseText = await generateAIResponse(text);
 
-    // Save bot response to MongoDB
-    const botMessage = new Message({ text: botResponseText, sender: "bot" });
+    // Save AI response
+    const botMessage = new Message({ senderId, text: aiResponseText, isBot: true });
     await botMessage.save();
 
-    return botMessage; // Send bot response back to UI
+    return { userMessage, botMessage };
   } catch (error) {
     throw new Error("Error processing message: " + error.message);
+  }
+};
+
+// Fetch all messages
+export const fetchMessages = async () => {
+  try {
+    return await Message.find().sort({ timestamp: 1 });
+  } catch (error) {
+    throw new Error("Error fetching messages: " + error.message);
   }
 };

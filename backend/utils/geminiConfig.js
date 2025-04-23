@@ -19,15 +19,26 @@ const generationConfig = {
   responseMimeType: "text/plain",
 };
 
-// Get response from Gemini API
+// Get AI response
 export async function fetchGeminiResponse(prompt) {
   try {
-    const result = await model.generateContent({ prompt, generationConfig });
-    return result.text();
+    if (!prompt || typeof prompt !== "string") {
+      throw new Error("Invalid input: prompt must be a string.");
+    }
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }], // ✅ Correct format
+      generationConfig,
+    });
+
+    const textResponse = result.response.text(); // ✅ Extract text response
+    return textResponse;
+
   } catch (error) {
     console.error("Error fetching Gemini response:", error);
     return "I'm sorry, but I couldn't process your request at the moment.";
   }
 }
+
 
 export { model, generationConfig };

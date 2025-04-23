@@ -25,23 +25,19 @@ const LoginPage = () => {
             setIsLoading(false);
             return;
         }
-
         const response = await axiosInstance.post("/login", { email, password });
-
         if (response.status === 200) {
             const { requiresOtp, token, user } = response.data;
-
             if (requiresOtp) {
                 const userEmail = user?.email || email; // Ensure we get the email
                 sessionStorage.setItem("userEmail", userEmail); // Store it
-
                 setSuccessMessage("OTP sent to your email. Please verify.");
                 navigate("/otp-verification");
                 return;
             }
-
-            sessionStorage.setItem("authToken", token);
-            navigate("/community");
+              sessionStorage.setItem("token", data.token);
+              console.log("Token stored successfully:", data.token);
+              navigate("/community");
         }
     } catch (error) {
         console.error("Login error:", error.response ? error.response.data : error.message);

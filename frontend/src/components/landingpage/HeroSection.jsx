@@ -5,32 +5,30 @@ import './Section.css'; // Create a separate CSS file for the animation
 
 const HeroSection = () => {
   return (
-    <header className="relative h-screen flex items-center justify-center text-white animated-bg">
+    <header className="animated-bg py-16 bg-gradient-to-r from-blue-600 to-purple-500 text-white">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
+      <div className="animated-bg py-16 bg-gradient-to-r from-blue-600 to-purple-500">
 
       {/* Content */}
       <div className="container mx-auto px-6 text-center relative z-20">
         {/* Branding Icon */}
-        <div className="flex justify-center items-center mb-6">
-          <SmartToyIcon className="text-white animate-bounce" fontSize="large" />
+        <div className="flex justify-center items-center mb-6 animate-bounce">
+          <SmartToyIcon className="text-white text-6xl animate-pulse" fontSize="large" />
           <h1 className="text-4xl font-bold ml-3">SmartSheria</h1>
         </div>
 
-        <h1 className="text-5xl font-bold mb-4">
-          AI-Powered Legal Assistant
-        </h1>
-        <p className="text-xl mb-6">
+        <h1 className="text-5xl md:text-6xl font-bold mb-4">AI-Powered Legal Assistant</h1>
+        <p className="text-lg md:text-xl mb-6">
           A smart community of legal professionals and tools to predict case outcomes, provide legal advice, 
           and simplify compliance management. Define use cases, explore predictions, and handle cases efficiently.
         </p>
 
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-6">
           <Button
             href="/signup"
             variant="contained"
             color="primary"
-            className="bg-blue-600 text-white px-8 py-3 rounded hover:bg-blue-700 transition duration-300"
+            className="bg-blue-600 text-white px-8 py-3 rounded hover:bg-blue-700 transition transform duration-300 hover:scale-105"
           >
             Get Started
           </Button>
@@ -38,11 +36,12 @@ const HeroSection = () => {
             href="/login"
             variant="outlined"
             color="primary"
-            className="text-white border-white px-8 py-3 rounded hover:bg-blue-600 hover:text-white transition duration-300"
+            className="text-white border-white px-8 py-3 rounded hover:bg-blue-600 hover:text-white transition transform duration-300 hover:scale-105"
           >
             Log In
           </Button>
         </div>
+      </div>
       </div>
     </header>
   );

@@ -16,6 +16,17 @@ import OtpVerificationPage from "./components/authentication/OtpVerificationPage
 import LandingPage from "../src/components/landingpage/LandingPage";
 import PrivacyPolicyPage from "../src/components/privacypolicy/PrivacyPolicyPage";
 import NotFoundPage from "../src/components/authentication/NotFoundPage"; // 404 Page
+import HelpPage from "./components/help/HelpPage";
+
+// Help Pages
+import SignupHelp from "./components/help/SignupHelp";
+import LoginHelp from "./components/help/LoginHelp";
+import PasswordHelp from "./components/help/PasswordHelp";
+import CommunityHelp from "./components/help/CommunityHelp";
+import ChatbotHelp from "./components/help/ChatbotHelp";
+import SettingsHelp from "./components/help/SettingsHelp";
+import ReportHelp from "./components/help/ReportHelp";
+import LogoutHelp from "./components/help/LogoutHelp";
 
 // 🔹 Protected Pages (Require Authentication)
 import CommunityPage from "./components/community/CommunityPage";
@@ -49,6 +60,17 @@ function App() {
         <Route exact path="/forgotpass" element={<ForgotPasswordPage />} />
         <Route exact path="/verify-email-signup" element={<EmailVerificationCode />} />
         <Route exact path="/change-password" element={<ChangePasswordPage />} />
+        <Route exact path="/help" element={<HelpPage />} />
+
+        {/* Help Section Routes */}
+        <Route path="/help/login" element={<LoginHelp />} />
+        <Route path="/help/signup" element={<SignupHelp />} />
+        <Route path="/help/forgot-password" element={<PasswordHelp />} />
+        <Route path="/help/community" element={<CommunityHelp />} />
+        <Route path="/help/chatbot" element={<ChatbotHelp />} />
+        <Route path="/help/settings" element={<SettingsHelp />} />
+        <Route path="/help/report" element={<ReportHelp />} />
+        <Route path="/help/logout" element={<LogoutHelp />} />
 
         {/* 🔹 Protected Routes (Require Authentication) */}
         <Route element={<ProtectedRoute />}>

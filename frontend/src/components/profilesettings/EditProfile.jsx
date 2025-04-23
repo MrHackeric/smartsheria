@@ -1,144 +1,223 @@
-import React, { useEffect, useState, useContext } from "react"; // Import useContext
-import { Button, TextField, Divider, Collapse } from "@mui/material";
-import { Formik, Field, Form } from "formik";
-import * as Yup from "yup";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import { Formik, Form, Field } from 'formik';
+import * as Yup from 'yup';
+import { User, Phone, Mail, AlertCircle, Loader2, Save } from 'lucide-react';
+import axios from 'axios';
+import { motion } from 'framer-motion';
 
-// Assuming AuthContext is imported somewhere in the code
-import { useAuth } from '../../AuthContext'; // Example import path
+const validationSchema = Yup.object({
+  fullName: Yup.string()
+    .min(2, 'Name must be at least 2 characters')
+    .required('Full name is required'),
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
+  phoneNumber: Yup.string()
+    .matches(/^[0-9+\-\s()]+$/, 'Invalid phone number')
+    .min(10, 'Phone number must be at least 10 digits')
+    .required('Phone number is required'),
+});
 
 const EditProfile = () => {
-  const [userData, setUserData] = useState({});
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
-  const currentUser = useContext(useAuth); // Now useContext will work
+  const [error, setError] = useState(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   useEffect(() => {
-    if (!currentUser || !currentUser._id) {
-      console.warn("No current user found. Fetch stopped.");
-      setLoading(false);
-      return;
-    }
-    const fetchUserData = async () => {
-      try {
-        console.log("Fetching data for user:", currentUser?._id); // Debugging user ID
-        const response = await axios.get(`/fetch/users/${currentUser?._id}`, { withCredentials: true });
-    
-        if (!response.data || typeof response.data !== "object") {
-          console.error("Invalid user data received:", response.data);
-          return;
-        }
-    
-        console.log("User Data Response:", response.data);
-        setUserData(response.data);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUserData();
-  }, [currentUser]); // Adding currentUser to the dependency array
+  }, []);
 
-  const validationSchema = Yup.object({
-    fullname: Yup.string().required("Full name is required"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    phoneNumber: Yup.string()
-      .matches(/^[0-9]+$/, "Phone number must be numeric")
-      .required("Phone number is required"),
-  });
-
-  const handleSubmit = async (values) => {
+  const fetchUserData = async () => {
     try {
-      console.log("Submitting updated profile data:", values);
-
-      const token = sessionStorage.getItem("authToken");
-
-      if (!token) {
-        alert("Authentication required. Please log in again.");
-        return;
-      }
-
-      await axios.put(`/fetch/users/${userData._id}`, values, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-
-      alert("Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating profile: ", error);
-      alert("Failed to update profile. Try again.");
+      const response = await axios.get('http://localhost:5000/api/user/profile');
+      setUserData(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch user data');
+      setLoading(false);
     }
   };
 
-  const toggleAdvancedSettings = () => setAdvancedSettingsOpen((prev) => !prev);
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      await axios.put('http://localhost:5000/api/user/profile', values);
+      setUpdateSuccess(true);
+      setTimeout(() => setUpdateSuccess(false), 3000);
+    } catch (err) {
+      setError('Failed to update profile');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-700">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-lg mx-auto bg-white shadow-lg rounded-xl p-6 mt-20">
-      <Formik
-        enableReinitialize
-        initialValues={{
-          fullname: userData.fullname || "",
-          email: userData.email || "",
-          phoneNumber: userData.phoneNumber || "",
-        }}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-      >
-        {({ errors, touched }) => (
-          <Form className="space-y-4">
-            <Field
-              name="fullname"
-              as={TextField}
-              label="Full Name"
-              variant="outlined"
-              fullWidth
-              error={touched.fullname && !!errors.fullname}
-              helperText={touched.fullname ? errors.fullname : ""}
-            />
-            <Field
-              name="email"
-              as={TextField}
-              label="Email"
-              variant="outlined"
-              fullWidth
-              error={touched.email && !!errors.email}
-              helperText={touched.email ? errors.email : ""}
-            />
-            <Field
-              name="phoneNumber"
-              as={TextField}
-              label="Phone Number"
-              variant="outlined"
-              fullWidth
-              error={touched.phoneNumber && !!errors.phoneNumber}
-              helperText={touched.phoneNumber ? errors.phoneNumber : ""}
-            />
-            <Divider className="my-4" />
-            <p className="text-sm text-gray-600 italic">
-              To change your password, please log out, proceed to login, select "Forgot Password," and follow the instructions.
-            </p>
-            <Button fullWidth variant="outlined" onClick={toggleAdvancedSettings}>
-              Advanced Settings
-            </Button>
-            <Collapse in={advancedSettingsOpen}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outlined" color="warning" fullWidth className="mt-2">
-                  Deactivate Account
-                </Button>
-                <Button variant="outlined" color="error" fullWidth className="mt-2">
-                  Delete Account
-                </Button>
-              </div>
-            </Collapse>
-            <Button type="submit" variant="contained" color="primary" fullWidth>
-              Save Changes
-            </Button>
-          </Form>
-        )}
-      </Formik>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-8">
+          <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
+            <User className="h-12 w-12 text-indigo-600" />
+          </div>
+          <motion.h2
+            className="text-3xl font-bold text-gray-900"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            Edit Profile
+          </motion.h2>
+          <p className="mt-2 text-sm text-gray-600">Update your personal information</p>
+        </div>
+
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <Formik
+            initialValues={{
+              fullName: userData?.fullName || '',
+              email: userData?.email || '',
+              phoneNumber: userData?.phoneNumber || '',
+            }}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ errors, touched, isSubmitting }) => (
+              <Form className="p-6 space-y-6">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Field
+                      name="fullName"
+                      className={`block w-full pl-10 pr-3 py-2 border ${
+                        touched.fullName && errors.fullName ? 'border-red-300' : 'border-gray-300'
+                      } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    />
+                  </div>
+                  {touched.fullName && errors.fullName && (
+                    <div className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.fullName}
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email Address
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Field
+                      name="email"
+                      type="email"
+                      className={`block w-full pl-10 pr-3 py-2 border ${
+                        touched.email && errors.email ? 'border-red-300' : 'border-gray-300'
+                      } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    />
+                  </div>
+                  {touched.email && errors.email && (
+                    <div className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.email}
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Field
+                      name="phoneNumber"
+                      className={`block w-full pl-10 pr-3 py-2 border ${
+                        touched.phoneNumber && errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
+                      } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    />
+                  </div>
+                  {touched.phoneNumber && errors.phoneNumber && (
+                    <div className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.phoneNumber}
+                    </div>
+                  )}
+                </motion.div>
+
+                {updateSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="bg-green-50 border border-green-200 rounded-md p-4"
+                  >
+                    <p className="text-green-700 text-sm">Profile updated successfully!</p>
+                  </motion.div>
+                )}
+
+                <motion.button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-5 w-5 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </motion.button>
+              </Form>
+            )}
+          </Formik>
+        </div>
+      </div>
     </div>
   );
 };

@@ -10,6 +10,7 @@ import { socketHandler } from './services/socketServices.js';
 import authRoutes from './routes/auth.js';
 import communityMessageRoutes from './routes/communityMessageRoutes.js';
 
+import ChatbotRoutes from './routes/chatbotRoutes.js';
 import passChangeRoutes from './routes/passchange.js';
 import initializeSocket from './socket.js';
 import bugReportRoutes from "./routes/bugReportRoutes.js";
@@ -55,11 +56,11 @@ io.on('connection', (socket) => {
 });
 
 // Use Routes
-app.use('/api', authRoutes);//Sign up here, Verify Credentials, Login
+app.use('/api', authRoutes, fetchUserRoutes);//Sign up here, Verify Credentials, Login
 app.use('/api/auth', passChangeRoutes);
 app.use('/api/communityMessages', communityMessageRoutes);
 app.use('/api/bugReports', bugReportRoutes);
-app.use('/fetch', fetchUserRoutes);
+app.use('/api/chatbot', ChatbotRoutes);
 
 //Socket.io Setup
 socketHandler(io);

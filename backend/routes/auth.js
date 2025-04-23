@@ -6,7 +6,6 @@ import express from 'express';
 import Otp from "../models/OtpSchema.js";
 
 const router = express.Router(); // ✅ Define router
-
 // 🔹 User Signup Route
 router.post("/signup", async (req, res) => {
     try {
@@ -144,6 +143,7 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ message: "Email and password are required" });
         }
 
+        //Find User by Email
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -151,12 +151,16 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
+        //Compare Passwords
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
             console.log("Password mismatch");
             return res.status(400).json({ message: "Invalid email or password" });
         }
+
+        // ✅ Generate JWT token **after** user is found
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
         console.log("Login successful for", email);
 

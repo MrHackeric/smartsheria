@@ -10,7 +10,7 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 py-4 text-white">
+    <nav className="bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 py-4 text-white relative">
       <div className="container mx-auto px-6 flex justify-between items-center">
         {/* Title */}
         <div className="flex items-center gap-2">
@@ -30,7 +30,7 @@ const Navbar = () => {
         <div className="space-x-4 hidden lg:flex">
           <Button
             href="/login"
-            variant="container"
+            variant="contained"
             startIcon={<LoginIcon />}
             className="text-white border-white hover:bg-white hover:text-blue-500 transition-transform duration-300 transform hover:scale-105"
           >
@@ -38,7 +38,7 @@ const Navbar = () => {
           </Button>
           <Button
             href="/signup"
-            variant="container"
+            variant="contained"
             startIcon={<AppRegistrationIcon />}
             className="text-white border-white hover:bg-white hover:text-blue-500 transition-transform duration-300 transform hover:scale-105"
           >
@@ -48,10 +48,10 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="lg:hidden absolute top-16 left-0 w-full bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 py-4">
+          <div className="lg:hidden absolute top-16 left-0 w-full bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 py-4 animate-slideIn">
             <Button
               href="/login"
-              variant="container"
+              variant="contained"
               startIcon={<LoginIcon />}
               className="text-white border-white hover:bg-white hover:text-blue-500 transition-transform duration-300 transform hover:scale-105 block w-full text-center mb-4"
             >
@@ -59,7 +59,7 @@ const Navbar = () => {
             </Button>
             <Button
               href="/signup"
-              variant="container"
+              variant="contained"
               startIcon={<AppRegistrationIcon />}
               className="text-white border-white hover:bg-white hover:text-blue-500 transition-transform duration-300 transform hover:scale-105 block w-full text-center"
             >
@@ -75,6 +75,7 @@ const Navbar = () => {
           background-size: 200% 200%;
           animation: gradientShift 6s infinite;
         }
+        
         @keyframes gradientShift {
           0% {
             background-position: 0% 50%;
@@ -84,6 +85,19 @@ const Navbar = () => {
           }
           100% {
             background-position: 0% 50%;
+          }
+        }
+
+        .animate-slideIn {
+          animation: slideIn 0.5s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+          from {
+            top: -100%;
+          }
+          to {
+            top: 16px;
           }
         }
       `}</style>

@@ -17,3 +17,24 @@
   }
 }
 
+/* Section background animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-bg {
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+}
+
+.text-primary {
+  color: #5A2A83; /* Primary color for icons */
+}

@@ -3,7 +3,7 @@ import { createMessage, getMessages } from "../controllers/chatbotController.js"
 
 const router = express.Router();
 
-router.post("/", createMessage); // Save user message & get AI response
-router.get("/", getMessages); // Fetch chat history
+router.post("/", createMessage); // Send message & get AI response
+router.get("/", getMessages); // Fetch all chat messages from DB
 
 export default router;
