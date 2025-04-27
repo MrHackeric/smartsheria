@@ -16,6 +16,9 @@ import initializeSocket from './socket.js';
 import bugReportRoutes from "./routes/bugReportRoutes.js";
 import fetchUserRoutes from './routes/fetchUser.js';
 
+import userRoutes from './routes/userRoutes.js';
+import adminRoutes from './routes/adminAuthRoutes.js';
+
 dotenv.config();
 connectDB();
 
@@ -30,16 +33,19 @@ app.use(express.json());
 app.use(
   cors({
     origin: 'http://localhost:5173', // Adjust based on frontend port
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'DELETE', 'PUT'],
     credentials: true, // Allow cookies & auth headers
   })
 );
 
 // Connect to MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB Connected'))
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log('MongoDB Connected to SmartSheria database...'))
   .catch((err) => console.log(err));
+
 
 // Handle WebSocket connections
 io.on('connection', (socket) => {
@@ -56,11 +62,12 @@ io.on('connection', (socket) => {
 });
 
 // Use Routes
-app.use('/api', authRoutes, fetchUserRoutes);//Sign up here, Verify Credentials, Login
+app.use('/api', authRoutes, fetchUserRoutes, adminRoutes);//Sign up here, Verify Credentials, Login
 app.use('/api/auth', passChangeRoutes);
 app.use('/api/communityMessages', communityMessageRoutes);
 app.use('/api/bugReports', bugReportRoutes);
 app.use('/api/chatbot', ChatbotRoutes);
+app.use('/api/users', userRoutes);
 
 //Socket.io Setup
 socketHandler(io);

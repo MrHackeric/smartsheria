@@ -59,44 +59,45 @@ const ChangePasswordPage = () => {
 
   const handleChangePassword = async () => {
     if (!passwordsMatch || passwordStrength === "Poor" || passwordStrength === "Weak") {
-        setMessage("Ensure your password meets all criteria and matches.");
-        return;
+      setMessage("Ensure your password meets all criteria and matches.");
+      return;
     }
-
+  
     const storedEmail = sessionStorage.getItem("resetEmail");  // ✅ Retrieve email from session
     if (!storedEmail) {
-        console.error("Email not found in session storage");  // Debugging log
-        setMessage("Session expired. Please restart the password reset process.");
-        navigate("/forgot-password");
-        return;
+      console.error("Email not found in session storage");  // Debugging log
+      setMessage("Session expired. Please restart the password reset process.");
+      return;
     }
-
+  
     const requestBody = { email: storedEmail, password };
     console.log("Sending request body:", requestBody);
-
+  
     try {
-        const response = await fetch("http://localhost:5000/api/auth/reset-password", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        const data = await response.json();
-        console.log("Response:", data);
-        setMessage(data.message);
-
-        if (response.ok) {
-            sessionStorage.removeItem("resetEmail"); // ✅ Remove email from session after reset
-            setTimeout(() => navigate("/login"), 2000);
-        }
+      const response = await fetch("http://localhost:5000/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+  
+      const data = await response.json();
+      console.log("Response:", data);
+      setMessage(data.message);
+  
+      if (response.ok) {
+        sessionStorage.removeItem("resetEmail"); // ✅ Remove email from session after reset
+        // Redirect to login page after successful password reset
+        setTimeout(() => navigate("/login"), 2000);  // Redirect after a brief delay
+      } else {
+        setMessage(data.message);  // Display error message from backend
+      }
     } catch (error) {
-        setMessage("An error occurred. Please try again.");
-        console.error("Password reset error:", error);
+      setMessage("An error occurred. Please try again.");
+      console.error("Password reset error:", error);
     }
-};
-
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">

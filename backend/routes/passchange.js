@@ -136,9 +136,11 @@ router.post("/reset-password", async (req, res) => {
         user.password = await bcrypt.hash(password, salt);
         await user.save();
 
+        // Return success message after password update
         res.status(200).json({ message: "Password updated successfully." });
     } catch (error) {
         console.error("Reset Password Error:", error);
+        // Return error message if anything goes wrong
         res.status(500).json({ message: "Error updating password." });
     }
 });

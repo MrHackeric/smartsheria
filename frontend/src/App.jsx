@@ -34,6 +34,13 @@ import ChatbotPage from "./components/chatbot/ChatbotPage";
 import BugReportPage from "../src/components/ReportIssue/BugReportPage";
 import EditProfilePage from "../src/components/profilesettings/EditProfilePage";
 
+//Admin Pages
+import Dashboard from "./components/admin/Dashboard";
+import AdminLoginPage from "./components/admin/AdminLoginPage";
+import AdminSignUpPage from "./components/admin/AdminSignUpPage";
+import AdminBugReportsPage from "./components/admin/AdminBugReportsPage";
+import AdminUsersPage from "./components/admin/adminUsersPage";
+
 // 🔹 Route Protection Component
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -61,6 +68,12 @@ function App() {
         <Route exact path="/verify-email-signup" element={<EmailVerificationCode />} />
         <Route exact path="/change-password" element={<ChangePasswordPage />} />
         <Route exact path="/help" element={<HelpPage />} />
+
+        <Route exact path="/admin-login" element={<AdminLoginPage />} />
+        <Route exact path="/admin-signup" element={<AdminSignUpPage />} />
+        <Route exact path="/admin-users" element={<AdminUsersPage />} />
+        <Route exact path="/admin-bug-reports" element={<AdminBugReportsPage />} />
+        <Route exact path="/admin-dashboard" element={<Dashboard />} />
 
         {/* Help Section Routes */}
         <Route path="/help/login" element={<LoginHelp />} />
