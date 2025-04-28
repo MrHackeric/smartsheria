@@ -1,19 +1,9 @@
 ```markdown
-<h1 align="center">⚡ SmartSheria Backend</h1>
 
-<p align="center">
+### ⚡ SmartSheria Backend
+
 Backend server for SmartSheria — providing secure user management, AI chatbot integration, real-time communication, and report handling.  
 Built with **Node.js** 🟩 and **Express.js** ⚡.
-</p>
-
-<div align="center">
-<img src="https://img.shields.io/badge/Node.js-Backend-green?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Express.js-Framework-black?style=for-the-badge" />
-<img src="https://img.shields.io/badge/MongoDB-Database-blue?style=for-the-badge" />
-<img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" />
-</div>
-
----
 
 ## 🚀 Getting Started
 

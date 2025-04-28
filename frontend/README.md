@@ -1,23 +1,9 @@
-Here’s an **upgraded, polished version** of your **Frontend README** to match the new main `README.md` style — more professional, clear, and beautiful for GitHub and academic/portfolio submissions:
-
----
-
 ```markdown
-<h1 align="center">🎨 SmartSheria Frontend</h1>
 
-<p align="center">
+### 🎨 SmartSheria Frontend</h1>
+
 Frontend client of the SmartSheria system — delivering smooth, secure, and AI-powered user experiences.  
 Built with <strong>React.js</strong> ⚛️ and <strong>Tailwind CSS</strong> 🎨
-</p>
-
-<div align="center">
-<img src="https://img.shields.io/badge/React.js-Frontend-blue?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Socket.io-Real--Time-black?style=for-the-badge" />
-<img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" />
-</div>
-
----
 
 ## 🚀 Getting Started
 

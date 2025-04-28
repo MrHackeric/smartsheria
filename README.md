@@ -1,19 +1,10 @@
 ```markdown
-<h1 align="center">⚡ SmartSheria</h1>
 
-<p align="center">
+### ⚡ SmartSheria
+
 A smart, AI-powered legal assistance platform built for real-world impact.  
 Final Year Computer Science Project (COMP 493) | Class of 2025 🎓
-</p>
 
-<div align="center">
-<img src="https://img.shields.io/badge/Frontend-React.js-blue?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Backend-Node.js-green?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Database-MongoDB-brightgreen?style=for-the-badge" />
-<img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" />
-</div>
-
----
 
 ## 🧠 Overview
 
