@@ -4,7 +4,7 @@ import Header from "../header/Header";
 import { Typography, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { motion } from "framer-motion";
-import chatbotImage from "../../images/image01.png";
+import chatbotImage from "../../images/Chatbot.png";
 
 const ChatbotHelp = () => {
   const navigate = useNavigate();

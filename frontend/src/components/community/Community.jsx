@@ -10,10 +10,14 @@ import {
 
 function Community() {
   const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [filteredMessages, setFilteredMessages] = useState([]);
+  const [starredMessages, setStarredMessages] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const messagesEndRef = useRef(null);
-  const [messages, setMessages] = useState([]);
-  const [starredMessages, setStarredMessages] = useState([]);
+
+  const currentUserId = "currentUserId"; // Replace with actual user ID logic
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,13 +29,14 @@ function Community() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [filteredMessages]);
 
   const fetchMessages = async () => {
     try {
       const response = await fetch("http://localhost:5000/api/communityMessages");
       const data = await response.json();
       setMessages(data);
+      setFilteredMessages(data); // Initialize filtered messages
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
@@ -42,7 +47,7 @@ function Community() {
 
     const message = {
       text: newMessage,
-      senderId: "currentUserId", // Replace with actual user ID
+      senderId: currentUserId, // Use dynamic ID in production
     };
 
     try {
@@ -66,11 +71,26 @@ function Community() {
     setNewMessage("");
   };
 
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    if (query.trim() === "") {
+      setFilteredMessages(messages);
+    } else {
+      const filtered = messages.filter((message) =>
+        message.text.toLowerCase().includes(query)
+      );
+      setFilteredMessages(filtered);
+    }
+  };
+
   return (
     <div className="w-full h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex justify-center items-center p-4 md:p-6">
-      <div className="w-full max-w-6xl h-[700px] bg-slate-900 border border-gray-700 rounded-xl shadow-lg flex flex-col transition-all duration-300 ease-in-out transform hover:scale-105">
+      <div className="w-full max-w-6xl h-[700px] bg-slate-900 border border-gray-700 rounded-xl shadow-lg flex flex-col">
+        
         {/* Header */}
-        <div className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
+        <div className="bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between">
           <button
             className="md:hidden text-gray-400 hover:text-white"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -82,6 +102,8 @@ function Community() {
               <input
                 type="text"
                 placeholder="Search discussions..."
+                value={searchQuery}
+                onChange={handleSearch}
                 className="w-full bg-slate-700 text-white rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -90,35 +112,38 @@ function Community() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto h-[450px] p-6 space-y-4 w-full">
-          {messages.map((message) => {
-            const isSentByCurrentUser = message.senderId === "currentUserId";
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {filteredMessages.map((message) => {
+            const isCurrentUser = message.senderId === currentUserId;
+
             return (
               <div
                 key={message._id}
-                className={`flex ${isSentByCurrentUser ? "justify-end" : "justify-start"} transition-all duration-300 ease-in-out transform hover:scale-[1.02]`}
+                className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`p-4 rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl ${
-                    isSentByCurrentUser ? "bg-blue-950 text-white" : "bg-slate-800 text-gray-300"
-                  } max-w-sm md:max-w-lg lg:max-w-xl`}
+                  className={`p-4 rounded-lg max-w-xs md:max-w-md lg:max-w-xl transition-all duration-200 hover:scale-105 hover:shadow-xl ${
+                    isCurrentUser ? "bg-blue-950 text-white" : "bg-slate-800 text-gray-300"
+                  }`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs text-gray-400">
                       {new Date(message.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
+
                   <p
-                    className="mt-2"
+                    className="mt-2 break-words"
                     dangerouslySetInnerHTML={{ __html: formatText(message.text) }}
                   ></p>
-                  <div className="mt-3 flex items-center space-x-4">
+
+                  <div className="mt-3 flex items-center space-x-3">
                     <button
-                      className={`${
+                      className={`transition-colors ${
                         starredMessages.some((msg) => msg.timestamp === message.timestamp)
                           ? "text-yellow-400"
                           : "text-gray-400 hover:text-blue-400"
-                      } transition-colors`}
+                      }`}
                       onClick={() => handleStarMessage(message, starredMessages, setStarredMessages)}
                     >
                       <Star className="h-4 w-4" />
@@ -146,10 +171,11 @@ function Community() {
               </div>
             );
           })}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
+        {/* Input Section */}
         <div className="bg-slate-800 border-t border-slate-700 p-4">
           <div className="flex items-center space-x-4">
             <input
@@ -170,6 +196,7 @@ function Community() {
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

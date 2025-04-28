@@ -4,7 +4,7 @@ import { Typography, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Header from "../header/Header";
 import { motion } from "framer-motion";
-import signupImage from "../../images/image01.png";
+import signupImage from "../../images/Signup.png";
 
 const SignupHelp = () => {
   const navigate = useNavigate();

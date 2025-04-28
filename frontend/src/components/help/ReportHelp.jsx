@@ -4,7 +4,7 @@ import { Typography, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Header from "../header/Header";
 import { motion } from "framer-motion";
-import reportImage from "../../images/image01.png";
+import reportImage from "../../images/Report.png";
 
 const ReportHelp = () => {
   const navigate = useNavigate();

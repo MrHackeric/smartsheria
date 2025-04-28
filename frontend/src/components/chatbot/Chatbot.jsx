@@ -12,7 +12,6 @@ function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [starredMessages, setStarredMessages] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -38,8 +37,8 @@ function Chatbot() {
     const text = messageText || input.trim();
     if (!text) return;
 
-    const messageData = { text, sender: "user" };
-    setMessages((prev) => [...prev, messageData]);
+    const userMessage = { text, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setTyping(true);
 
@@ -53,7 +52,8 @@ function Chatbot() {
       if (!response.ok) throw new Error("Chatbot error");
 
       const data = await response.json();
-      setMessages((prev) => [...prev, { text: data.response, sender: "ai" }]);
+      const aiMessage = { text: data.response, sender: "ai" };
+      setMessages((prev) => [...prev, aiMessage]);
       setTyping(false);
     } catch (error) {
       console.error("Chatbot API Error:", error);
@@ -62,22 +62,23 @@ function Chatbot() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-indigo-600 to-blue-700 text-gray-100 p-4 md:p-6 transition-all duration-300 ease-in-out">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-8 animate__animated animate__fadeIn">
-          <Scale className="w-8 h-8 text-blue-400 animate__animated animate__fadeIn" />
+    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-indigo-600 to-blue-700 text-gray-100 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto flex flex-col h-full">
+        <div className="flex items-center gap-3 mb-8">
+          <Scale className="w-8 h-8 text-blue-400" />
           <h1 className="text-2xl font-semibold">Legal Assistant</h1>
         </div>
 
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-xl border border-slate-700">
+        <div className="flex flex-col bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-xl border border-slate-700 flex-1">
+          {/* Quick Questions */}
           <div className="p-4 border-b border-slate-700">
             <h2 className="text-sm font-medium text-gray-400 mb-3">Quick Questions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 animate__animated animate__fadeIn">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {QUICK_QUESTIONS.map((q, idx) => (
                 <button
                   key={idx}
                   onClick={() => sendMessage(q.text)}
-                  className="flex items-center gap-2 p-2 text-left text-sm rounded-lg bg-slate-700 hover:bg-slate-600 transition-all duration-300 ease-in-out transform hover:scale-105"
+                  className="flex items-center gap-2 p-2 text-left text-sm rounded-lg bg-slate-700 hover:bg-slate-600 transition-transform transform hover:scale-105"
                 >
                   {q.text}
                 </button>
@@ -85,36 +86,38 @@ function Chatbot() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto h-[450px] p-6 space-y-4 w-full">
-            {messages.map((message) => {
-              const isSentByCurrentUser = message.sender === "user";
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {messages.map((message, idx) => {
+              const isUser = message.sender === "user";
+
               return (
                 <div
-                  key={message._id || message.text}
-                  className={`flex ${isSentByCurrentUser ? "justify-end" : "justify-start"}`}
+                  key={idx}
+                  className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fadeIn`}
                 >
                   <div
-                    className={`p-4 rounded-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl ${
-                      isSentByCurrentUser ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300"
-                    } max-w-sm md:max-w-lg lg:max-w-xl animate__animated animate__fadeIn`}
+                    className={`p-4 rounded-lg max-w-xs md:max-w-md lg:max-w-xl shadow-md ${
+                      isUser
+                        ? "bg-blue-600 text-white rounded-br-none"
+                        : "bg-gray-700 text-gray-300 rounded-bl-none"
+                    }`}
                   >
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">
-                        {new Date().toLocaleTimeString()}
-                      </span>
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>{new Date().toLocaleTimeString()}</span>
                     </div>
-                    <p className="mt-2">{message.text}</p>
-                    <div className="mt-3 flex items-center space-x-4">
-                      <button className="text-gray-400 hover:text-yellow-400 transition-colors">
+                    <p className="mt-2 break-words">{message.text}</p>
+                    <div className="mt-3 flex items-center space-x-3">
+                      <button className="text-gray-400 hover:text-yellow-400">
                         <Star className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-blue-400 transition-colors">
+                      <button className="text-gray-400 hover:text-blue-400">
                         <Share2 className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-blue-400 transition-colors">
+                      <button className="text-gray-400 hover:text-blue-400">
                         <Copy className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-blue-400 transition-colors">
+                      <button className="text-gray-400 hover:text-blue-400">
                         <Download className="h-4 w-4" />
                       </button>
                     </div>
@@ -125,6 +128,14 @@ function Chatbot() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Typing indicator */}
+          {typing && (
+            <div className="p-4 text-sm text-gray-400 animate-pulse">
+              AI is typing...
+            </div>
+          )}
+
+          {/* Input Field */}
           <div className="p-4 border-t border-slate-700">
             <div className="flex gap-2">
               <input
@@ -133,11 +144,11 @@ function Chatbot() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
                 placeholder="Type your message..."
-                className="flex-1 bg-slate-700 text-gray-100 rounded-lg px-4 py-2 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out"
+                className="flex-1 bg-slate-700 text-gray-100 rounded-lg px-4 py-2 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={() => sendMessage(input)}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 transition-colors duration-200 flex items-center justify-center transform hover:scale-110"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 transition-transform hover:scale-110"
               >
                 <Send size={20} />
               </button>
