@@ -58,60 +58,80 @@ const SignUpPage = () => {
 
   const handleSignUp = async () => {
     if (isLoading) return;
-
+  
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{7,15}$/; // Accepts 7 to 15 digits
+  
+    if (!formData.fullName.trim()) {
+      setError("Full name is required.");
+      return;
+    }
+  
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+  
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      setError("Please enter a valid phone number (digits only, 7-15 digits).");
+      return;
+    }
+  
     if (!passwordsMatch || passwordStrength === "Poor" || passwordStrength === "Weak") {
-        setError("Please ensure your password meets all criteria and matches.");
-        return;
+      setError("Please ensure your password meets all criteria and matches.");
+      return;
     }
+  
     if (!formData.agreedToPrivacyPolicy) {
-        setError("You must agree to the Privacy Policy.");
-        return;
+      setError("You must agree to the Privacy Policy.");
+      return;
     }
-
+  
     try {
-        setIsLoading(true);
-        setError("");
-
-        const { fullName, email, phoneNumber, password } = formData;
-
-        console.log("Sending request...");
-
-        // Send sign-up request
-        const response = await axiosInstance.post("/signup", { fullName, email, phoneNumber, password });
-
-        console.log("Backend Response:", response.data);
-
-        if (response.status === 201) {
-            const { token, user } = response.data;
-
-            if (!token) {
-                throw new Error("Authentication token missing in response.");
-            }
-
-            // ✅ Store authentication details securely in sessionStorage
-            sessionStorage.setItem("authToken", token);
-            sessionStorage.setItem("userId", response.data.userId);
-            sessionStorage.setItem("user", JSON.stringify(user));
-            sessionStorage.setItem("userEmail", response.data.email);
-
-            navigate("/verify-email-signup");
-        } else {
-            setError("Sign-up failed. Please try again.");
+      setIsLoading(true);
+      setError("");
+  
+      const { fullName, email, phoneNumber, password } = formData;
+  
+      console.log("Sending request...");
+  
+      // Send sign-up request
+      const response = await axiosInstance.post("/signup", { fullName, email, phoneNumber, password });
+  
+      console.log("Backend Response:", response.data);
+  
+      if (response.status === 201) {
+        const { token, user } = response.data;
+  
+        if (!token) {
+          throw new Error("Authentication token missing in response.");
         }
+  
+        // ✅ Store authentication details securely in sessionStorage
+        sessionStorage.setItem("authToken", token);
+        sessionStorage.setItem("userId", response.data.userId);
+        sessionStorage.setItem("user", JSON.stringify(user));
+        sessionStorage.setItem("userEmail", response.data.email);
+  
+        navigate("/verify-email-signup");
+      } else {
+        setError("Sign-up failed. Please try again.");
+      }
     } catch (error) {
-        console.error("Sign-up error:", error.response?.data || error.message);
-
-        if (error.response?.status === 400) {
-            setError("User already exists. Please log in.");
-        } else if (error.response?.status === 500) {
-            setError("Server error. Please try again later.");
-        } else {
-            setError(error.response?.data?.message || "An error occurred while signing up.");
-        }
+      console.error("Sign-up error:", error.response?.data || error.message);
+  
+      if (error.response?.status === 400) {
+        setError("User already exists. Please log in.");
+      } else if (error.response?.status === 500) {
+        setError("Server error. Please try again later.");
+      } else {
+        setError(error.response?.data?.message || "An error occurred while signing up.");
+      }
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
+  
 
 
   return (
