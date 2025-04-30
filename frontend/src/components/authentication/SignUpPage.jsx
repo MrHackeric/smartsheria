@@ -141,7 +141,7 @@ const SignUpPage = () => {
 
         {error && <p className="text-red-500 text-center">{error}</p>}
 
-        <input type="text" id="fullName" placeholder="Full Name" className="w-full border p-2" value={formData.fullName} onChange={handleChange} />
+        <input type="text" id="fullName" placeholder="Name/Username" className="w-full border p-2" value={formData.fullName} onChange={handleChange} />
         <input type="tel" id="phoneNumber" placeholder="Phone Number" className="w-full border p-2" value={formData.phoneNumber} onChange={handleChange} />
         <input type="email" id="email" placeholder="Email" className="w-full border p-2" value={formData.email} onChange={handleChange} />
 

@@ -85,7 +85,7 @@ const AdminUsersPage = () => {
       <div className="flex flex-col md:flex-row items-center gap-4">
         <input
           type="text"
-          placeholder="Full Name"
+          placeholder="Name/Username"
           value={newUser.fullName}
           onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
           className="p-2 border rounded"
@@ -153,7 +153,7 @@ const AdminUsersPage = () => {
             <table className="min-w-full table-auto text-left">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="px-4 py-2">Full Name</th>
+                  <th className="px-4 py-2">Name/Username</th>
                   <th className="px-4 py-2">Email</th>
                   <th className="px-4 py-2">Phone</th>
                   <th className="px-4 py-2">Actions</th>
